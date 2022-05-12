@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.polar.bear.api.mappers.CsrInfoMapper">
+
+	<select id="selectCsrInfoDetailById" parameterType="map" resultType="csrInfoDto">
+	SELECT 
+		CSR_NO
+		, CSR_ID
+		, CSR_PWD
+		, CSR_NAME
+		, CSR_PHONE
+		, CSR_STATUS
+		, LOGIN_FAIL_CNT
+		, LAST_LOGIN_DATE
+		, REG_DATE
+		, REG_ID
+		, UPDT_DATE
+		, UPDT_ID
+	FROM T_CSR_INFO
+	WHERE CSR_ID = #{csrId}
+    </select>
+    
+    <select id="selectCsrInfoDetailByNo" parameterType="map" resultType="csrInfoDto">
+	SELECT 
+		CSR_NO
+		, CSR_ID
+		, CSR_PWD
+		, CSR_NAME
+		, CSR_PHONE
+		, CSR_STATUS
+		, LOGIN_FAIL_CNT
+		, LAST_LOGIN_DATE
+		, REG_DATE
+		, REG_ID
+		, UPDT_DATE
+		, UPDT_ID
+	FROM T_CSR_INFO
+	WHERE CSR_NO = #{csrNo}
+    </select>
+    
+    <update id="updateCsrLoginFailCnt" parameterType="map">
+    UPDATE t_csr_info
+	SET
+		LOGIN_FAIL_CNT = #{loginFailCnt},
+		UPDT_DATE=NOW(),
+		UPDT_ID= #{csrId}
+	WHERE 
+		CSR_ID = #{csrId}
+    </update>
+    
+    <update id="updateCsrLastLoginDate" parameterType="map">
+    UPDATE t_csr_info
+	SET
+		LAST_LOGIN_DATE=NOW(),
+		UPDT_DATE=NOW(),
+		UPDT_ID= #{csrId}
+	WHERE 
+		CSR_ID = #{csrId}
+    </update>
+    
+    <!-- 1:1 문의 내용 리스트 -->
+	<select id="selectCsrQnaInfoList" parameterType="map" resultType="qnaInfoDto">
+	(
+		SELECT 
+			QNA_NO
+			, QNA_USER_ID
+			, CSR_NO
+			, QNA_TITLE
+			, QNA_CONTENTS
+			, ANSWER_YN
+			, REG_DATE
+			, UPDT_DATE
+		FROM t_qna_info
+		WHERE 1=1
+		AND ANSWER_YN = 'N'
+		ORDER BY REG_DATE DESC
+	)
+	UNION
+	(
+		SELECT 
+			QNA_NO
+			, QNA_USER_ID
+			, CSR_NO
+			, QNA_TITLE
+			, QNA_CONTENTS
+			, ANSWER_YN
+			, REG_DATE
+			, UPDT_DATE
+		FROM t_qna_info
+		WHERE 1=1
+		AND ANSWER_YN = 'Y'
+		ORDER BY REG_DATE DESC
+	)
+	LIMIT #{startNum}, #{pageCnt}
+    </select>
+    
+    <select id="selectQnaCsrNo" parameterType="qnaInfoDto" resultType="Integer">
+    SELECT 
+		COUNT(QNA_NO)
+	FROM 
+		t_qna_info
+	WHERE
+		QNA_NO = #{qnaNo}
+		AND QNA_USER_ID = #{qnaUserId}
+		AND CSR_NO = #{csrNo}
+    </select>
+    
+    <insert id="insertCsrInfo" parameterType="csrInfoDto">
+    <selectKey keyProperty="csrNo" resultType="Integer" order="AFTER">
+    SELECT LAST_INSERT_ID()
+    </selectKey>
+    INSERT INTO t_csr_info (
+		CSR_ID
+		, CSR_PWD
+		, CSR_NAME
+		, CSR_PHONE
+		, CSR_STATUS
+		, LOGIN_FAIL_CNT
+		, LAST_LOGIN_DATE
+		, REG_DATE
+		, REG_ID
+		, UPDT_DATE
+		, UPDT_ID
+	) VALUES (
+		#{csrId}
+		, #{csrPwd}
+		, #{csrName}
+		, #{csrPhone}
+		, '001'
+		, 0
+		, NOW()
+		, NOW()
+		, 'admin'
+		, NOW()
+		, 'admin'
+	)
+    </insert>
+</mapper>

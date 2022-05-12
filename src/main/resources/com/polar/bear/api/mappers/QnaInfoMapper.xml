@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.polar.bear.api.mappers.QnaInfoMapper">
+
+	<!-- 1:1 문의 내용 리스트 -->
+	<select id="selectQnaInfoList" parameterType="map" resultType="qnaInfoDto">
+	SELECT 
+		QNA_NO
+		, QNA_USER_ID
+		, CSR_NO
+		, QNA_TITLE
+		, QNA_CONTENTS
+		, ANSWER_YN
+		, REG_DATE
+		, UPDT_DATE
+	FROM t_qna_info
+	WHERE 1=1
+	ORDER BY REG_DATE DESC
+	LIMIT #{startNum}, #{pageCnt}
+    </select>
+    
+    <!-- 1:1 문의 내용 리스트 카운트 -->
+	<select id="selectQnaInfoListCnt" parameterType="map" resultType="Integer">
+	SELECT 
+		count(QNA_NO)
+	FROM t_qna_info
+    </select>
+    
+    
+    <!-- 1:1 문의 내용 상세 -->
+    <select id="selectQnaInfoDetail" parameterType="map" resultType="qnaInfoDto">
+	SELECT 
+		TQI.QNA_NO
+		, TQI.QNA_USER_ID
+		, TQI.CSR_NO
+		, TQI.QNA_TITLE
+		, TQI.QNA_CONTENTS
+		, TQI.ANSWER_YN
+		, TQI.REG_DATE
+		, TQI.UPDT_DATE
+		, TQR.QNA_REPLY_NO
+		, TQR.QNA_REPLY_CONTENTS
+		, TQR.UPDT_DATE AS REPLY_UPDT_DATE
+		, TCI.CSR_NAME
+	FROM t_qna_info TQI
+	LEFT JOIN t_qna_reply TQR ON TQI.QNA_NO = TQR.QNA_NO
+	LEFT JOIN t_csr_info TCI ON TQI.CSR_NO = TCI.CSR_NO
+	WHERE TQI.QNA_NO = #{qnaNo}
+	AND QNA_USER_ID = #{qnaUserId}
+    </select>
+    
+    <!-- 1:1 문의 내용 저장 -->
+    <insert id="insertQnaInfo" parameterType="qnaInfoDto">
+    <selectKey keyProperty="qnaNo" resultType="Integer" order="AFTER">
+    SELECT LAST_INSERT_ID()
+    </selectKey>
+    INSERT INTO t_qna_info(
+    	QNA_USER_ID
+    	, QNA_USER_PWD
+    	, QNA_TITLE
+    	, QNA_CONTENTS
+    	, ANSWER_YN
+    	, REG_DATE
+    	, UPDT_DATE
+    )VALUES (
+    	 #{qnaUserId}
+    	, #{qnaUserPwd}
+    	, #{qnaTitle}
+    	, #{qnaContents}
+    	, 'N'
+    	, NOW()
+    	, NOW()
+    	)
+    </insert>
+    
+    <select id="selectQnaUserPwd" parameterType="qnaInfoDto" resultType="String">
+    	SELECT
+			QNA_USER_PWD
+		FROM
+			t_qna_info
+		WHERE
+			QNA_NO = #{qnaNo}
+			AND QNA_USER_ID = #{qnaUserId}
+    </select>
+    
+    
+    <update id="updateQnaInfo" parameterType="qnaInfoDto">
+    UPDATE t_qna_info
+	SET
+	<if test='!"".equals(qnaTitle)'>
+		QNA_TITLE=#{qnaTitle},
+	</if>
+	<if test='!"".equals(qnaContents)'>
+		QNA_CONTENTS=#{qnaContents},
+	</if>			
+		UPDT_DATE=NOW()
+	WHERE
+		QNA_NO = #{qnaNo}
+		AND QNA_USER_ID =#{qnaUserId}
+    </update>
+    
+    <update id="updateQnaCsrNo" parameterType="qnaInfoDto">
+    UPDATE t_qna_info
+	SET
+		CSR_NO=#{csrNo}
+		, UPDT_DATE=NOW()
+	WHERE 
+		QNA_NO = #{qnaNo}
+		AND QNA_USER_ID =#{qnaUserId}
+    </update>
+    
+    <update id="updateQnaAnswerYn" parameterType="qnaInfoDto">
+    UPDATE t_qna_info
+	SET
+		ANSWER_YN = #{answerYn}
+		, UPDT_DATE=NOW()
+	WHERE 
+		QNA_NO = #{qnaNo}
+		AND QNA_USER_ID =#{qnaUserId}
+    </update>
+    
+    <insert id="insertQnaReplyInfo" parameterType="qnaInfoDto">
+    <selectKey keyProperty="qnaReplyNo" resultType="Integer" order="AFTER">
+    	SELECT LAST_INSERT_ID()
+    </selectKey>
+    INSERT INTO t_qna_reply (
+		QNA_NO
+		, QNA_REPLY_CONTENTS
+		, REG_DATE
+		, REG_CRS_NO
+		, UPDT_DATE
+		, UPDT_CRS_NO
+	) VALUES (
+		#{qnaNo}
+		, #{qnaReplyContents}
+		, NOW()
+		, #{regCrsNo}
+		, NOW()
+		, #{updtCrsNo}
+	)
+    </insert>
+    
+    <update id="updateQnaReplyInfo" parameterType="qnaInfoDto">
+    UPDATE t_qna_reply
+	SET
+		QNA_REPLY_CONTENTS=#{qnaReplyContents},
+		UPDT_DATE=NOW(),
+		UPDT_CRS_NO=#{updtCrsNo}
+	WHERE 
+		QNA_REPLY_NO = #{qnaReplyNo}
+    </update>    
+    
+    
+</mapper>
