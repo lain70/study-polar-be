@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.time.LocalDateTime;
 
 import com.polar.bear.api.mappers.ProductInfoMapper;
+import com.polar.bear.api.models.CustomerProductDto;
 import com.polar.bear.api.models.ProductImageDto;
 import com.polar.bear.api.models.ProductInfoDto;
 import com.polar.bear.api.utils.ProductImagePathResolver;
@@ -58,6 +59,10 @@ public class ProductInfoService {
 			product.setImages(productInfoMapper.selectProductImages(productNo));
 		}
 		return product;
+	}
+
+	public List<CustomerProductDto> selectFeaturedProducts(int limit) throws Exception {
+		return productInfoMapper.selectFeaturedProducts(Math.min(Math.max(limit, 1), 20));
 	}
 
 	@Transactional(rollbackFor = Exception.class)
