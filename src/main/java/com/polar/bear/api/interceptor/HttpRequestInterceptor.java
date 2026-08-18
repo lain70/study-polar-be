@@ -74,11 +74,11 @@ public class HttpRequestInterceptor extends HandlerInterceptorAdapter {
             LoginRedisVo loginRedisVo = this.jwtUtil.validateAccessToken(request.getHeader("authorization"));
             if (loginRedisVo != null) {
                 
-                logSb.addLog("[Request Authorization] " + loginRedisVo.getCsrKey());
+                logSb.addLog("[Request Authorization] " + loginRedisVo.getUserKey());
 
-                if (StringUtils.equals(loginRedisVo.getType(), "CSR")) {
+                if (StringUtils.equals(loginRedisVo.getType(), "USER")) {
                     HttpSession session = request.getSession();
-                    session.setAttribute("userId", loginRedisVo.getCsrId());
+                    session.setAttribute("userId", loginRedisVo.getUserId());
                 }
 
             } else {

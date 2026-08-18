@@ -27,6 +27,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.web.cors.CorsUtils;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.SignatureException;
@@ -48,6 +49,11 @@ public class JwtAuthenticationFilter extends BasicAuthenticationFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
+		if (CorsUtils.isPreFlightRequest(request)) {
+			chain.doFilter(request, response);
+			return;
+		}
+
 		String token = request.getHeader("Authorization");
 
 		try {
@@ -61,7 +67,7 @@ public class JwtAuthenticationFilter extends BasicAuthenticationFilter {
 					if (loginRedisVo != null) {
 						List<GrantedAuthority> roles = new ArrayList<>();
 						roles.add(new SimpleGrantedAuthority("ROLE_" + loginRedisVo.getType()));
-						authToken = new UsernamePasswordAuthenticationToken(loginRedisVo.getCsrKey(), token, roles);
+						authToken = new UsernamePasswordAuthenticationToken(loginRedisVo.getUserKey(), token, roles);
 						authToken.setDetails(Optional.of(loginRedisVo));
 					}
 					auth = authToken;

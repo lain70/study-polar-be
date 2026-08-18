@@ -4,6 +4,7 @@ import com.polar.bear.api.interceptor.HttpLoggingInterceptor;
 import com.polar.bear.api.interceptor.HttpRequestInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
+	@org.springframework.beans.factory.annotation.Value("${product.image-storage-path:./uploads/product}")
+	private String productImageStoragePath;
 	
     private final HttpRequestInterceptor httpRequestInterceptor;
     private final HttpLoggingInterceptor httpLoggingInterceptor;
@@ -30,6 +33,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
 	}
 
 
+
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry) {
+		String location = java.nio.file.Paths.get(productImageStoragePath).toAbsolutePath().normalize().toUri().toString();
+		registry.addResourceHandler("/product-images/**").addResourceLocations(location);
+	}
 
 	@Override
 	public void addViewControllers(ViewControllerRegistry registry) {

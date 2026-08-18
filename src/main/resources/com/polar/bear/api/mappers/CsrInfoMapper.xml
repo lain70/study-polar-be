@@ -17,7 +17,7 @@
 		, REG_ID
 		, UPDT_DATE
 		, UPDT_ID
-	FROM T_CSR_INFO
+	FROM csr_info
 	WHERE CSR_ID = #{csrId}
     </select>
     
@@ -35,12 +35,12 @@
 		, REG_ID
 		, UPDT_DATE
 		, UPDT_ID
-	FROM T_CSR_INFO
+	FROM csr_info
 	WHERE CSR_NO = #{csrNo}
     </select>
     
     <update id="updateCsrLoginFailCnt" parameterType="map">
-    UPDATE t_csr_info
+    UPDATE csr_info
 	SET
 		LOGIN_FAIL_CNT = #{loginFailCnt},
 		UPDT_DATE=NOW(),
@@ -50,7 +50,7 @@
     </update>
     
     <update id="updateCsrLastLoginDate" parameterType="map">
-    UPDATE t_csr_info
+    UPDATE csr_info
 	SET
 		LAST_LOGIN_DATE=NOW(),
 		UPDT_DATE=NOW(),
@@ -71,7 +71,7 @@
 			, ANSWER_YN
 			, REG_DATE
 			, UPDT_DATE
-		FROM t_qna_info
+		FROM qna_info
 		WHERE 1=1
 		AND ANSWER_YN = 'N'
 		ORDER BY REG_DATE DESC
@@ -87,7 +87,7 @@
 			, ANSWER_YN
 			, REG_DATE
 			, UPDT_DATE
-		FROM t_qna_info
+		FROM qna_info
 		WHERE 1=1
 		AND ANSWER_YN = 'Y'
 		ORDER BY REG_DATE DESC
@@ -99,7 +99,7 @@
     SELECT 
 		COUNT(QNA_NO)
 	FROM 
-		t_qna_info
+		qna_info
 	WHERE
 		QNA_NO = #{qnaNo}
 		AND QNA_USER_ID = #{qnaUserId}
@@ -110,7 +110,7 @@
     <selectKey keyProperty="csrNo" resultType="Integer" order="AFTER">
     SELECT LAST_INSERT_ID()
     </selectKey>
-    INSERT INTO t_csr_info (
+    INSERT INTO csr_info (
 		CSR_ID
 		, CSR_PWD
 		, CSR_NAME
