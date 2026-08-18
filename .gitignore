@@ -1,6 +1,10 @@
 HELP.md
 .gradle
 build/
+uploads/
+src/main/resources/application-loc.yml
+src/main/resources/application-prd.yml
+untitled/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.polar.bear.api.mappers.AdminInfoMapper">
+
+	<select id="selectAdminInfoById" parameterType="String" resultType="adminInfoDto">
+	SELECT
+		ADMIN_NO
+		, ADMIN_ID
+		, ADMIN_PWD
+		, ADMIN_NAME
+		, ADMIN_PHONE
+		, ADMIN_DEPARTMENT
+		, ADMIN_POSITION
+		, ADMIN_STATUS
+		, USE_YN
+		, REG_DATE
+		, REG_ID
+		, UPDT_DATE
+		, UPDT_ID
+	FROM admin_info
+	WHERE ADMIN_ID = #{adminId}
+	</select>
+</mapper>

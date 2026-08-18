@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.polar.bear.api.mappers.LoginHistoryMapper">
+
+	<insert id="insertUserLoginHistory" parameterType="com.polar.bear.api.models.LoginHistoryDto">
+	INSERT INTO user_login_history (
+		USER_NO
+		, IP_ADDRESS
+		, ACCESS_INFO
+		, OS_NAME
+		, APP_NAME
+		, APP_VERSION
+		, LOGIN_DATE
+	) VALUES (
+		#{userNo}
+		, #{ipAddress}
+		, #{accessInfo}
+		, #{osName}
+		, #{appName}
+		, #{appVersion}
+		, NOW()
+	)
+	</insert>
+
+	<insert id="insertAdminLoginHistory" parameterType="com.polar.bear.api.models.LoginHistoryDto">
+	INSERT INTO admin_login_history (
+		ADMIN_NO
+		, IP_ADDRESS
+		, ACCESS_INFO
+		, OS_NAME
+		, APP_NAME
+		, APP_VERSION
+		, LOGIN_DATE
+	) VALUES (
+		#{adminNo}
+		, #{ipAddress}
+		, #{accessInfo}
+		, #{osName}
+		, #{appName}
+		, #{appVersion}
+		, NOW()
+	)
+	</insert>
+</mapper>

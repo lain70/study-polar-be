@@ -21,15 +21,15 @@ public class TokenVo implements Serializable {
 
     private long expiration;
 
-    private String csrKey;
+    private String userKey;
 
-    private String csrId;
+    private String userId;
 
-    public TokenVo(String type, long creation, long expiration, String csrKey, String csrId){
+    public TokenVo(String type, long creation, long expiration, String userKey, String userId){
         this.type = type;
         this.creation = creation;
         this.expiration = expiration;
-        this.csrKey = csrKey;
-        this.csrId = csrId;
+        this.userKey = userKey;
+        this.userId = userId;
     }
 }

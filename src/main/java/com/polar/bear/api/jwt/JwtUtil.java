@@ -133,20 +133,20 @@ public class JwtUtil implements Serializable {
             throw new WrongTokenException();
         }
 
-        LoginRedisVo loginRedisVo = this.loginRedisRepository.findById(tokenVo.getCsrKey());
+        LoginRedisVo loginRedisVo = this.loginRedisRepository.findById(tokenVo.getUserKey());
 
         if(loginRedisVo != null && tokenVo.getCreation() < loginRedisVo.getLastUpdateTime()) {
             throw new ExpiredTokenException();
         }
 
         if(loginRedisVo != null
-                && !StringUtils.isEmpty(loginRedisVo.getCsrId())
-                && !StringUtils.isEmpty(tokenVo.getCsrId())
-                && loginRedisVo.getCsrId().equals(tokenVo.getCsrId())
+                && !StringUtils.isEmpty(loginRedisVo.getUserId())
+                && !StringUtils.isEmpty(tokenVo.getUserId())
+                && loginRedisVo.getUserId().equals(tokenVo.getUserId())
         ) {
             return loginRedisVo;
         } else {
-            this.loginRedisRepository.delete(tokenVo.getCsrKey());
+            this.loginRedisRepository.delete(tokenVo.getUserKey());
             throw new NotAuthenticationException();
         }
     }
@@ -160,26 +160,26 @@ public class JwtUtil implements Serializable {
         }
 
         if(this.isTokenExpired(token)) {
-            this.loginRedisRepository.delete(tokenVo.getCsrKey());
+            this.loginRedisRepository.delete(tokenVo.getUserKey());
             throw new ExpiredTokenException();
         }
 
-        LoginRedisVo loginRedisVo = this.loginRedisRepository.findById(tokenVo.getCsrKey());
+        LoginRedisVo loginRedisVo = this.loginRedisRepository.findById(tokenVo.getUserKey());
 
         if(loginRedisVo != null
-                && !StringUtils.isEmpty(loginRedisVo.getCsrId())
-                && !StringUtils.isEmpty(tokenVo.getCsrId())
-                && loginRedisVo.getCsrId().equals(tokenVo.getCsrId())
+                && !StringUtils.isEmpty(loginRedisVo.getUserId())
+                && !StringUtils.isEmpty(tokenVo.getUserId())
+                && loginRedisVo.getUserId().equals(tokenVo.getUserId())
         ) {
             return loginRedisVo;
         } else {
-            this.loginRedisRepository.delete(tokenVo.getCsrKey());
+            this.loginRedisRepository.delete(tokenVo.getUserKey());
             throw new NotAuthenticationException();
         }
     }
 
     //generate Access token
-    public String generateToken(String csrKey, String csrId, String type) throws Exception {
+    public String generateToken(String userKey, String userId, String type) throws Exception {
 
         Date creation = new Date(System.currentTimeMillis());
         Date expiration = new Date(System.currentTimeMillis() + ACCESS_TOKEN_VALIDITY * 1000);
@@ -190,7 +190,7 @@ public class JwtUtil implements Serializable {
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
-        String tokenAsString = objectMapper.writeValueAsString(new TokenVo(type, creation.getTime(), expiration.getTime(), csrKey, csrId)); // ��ūvo �ð� ����
+        String tokenAsString = objectMapper.writeValueAsString(new TokenVo(type, creation.getTime(), expiration.getTime(), userKey, userId)); // ��ūvo �ð� ����
         String aesTokenAsString = Aes256Util.getEncrypt(tokenAsString);
 
         return new String(Base64.encodeBase64(aesTokenAsString.getBytes("UTF-8")));

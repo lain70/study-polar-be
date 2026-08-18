@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.polar.bear.api.mappers.ProductInfoMapper">
+	<sql id="productColumns">
+		P.PRODUCT_NO, P.PRODUCT_CODE, P.PRODUCT_NAME_KO, P.PRODUCT_NAME_EN, P.BRAND_NAME,
+		P.CATEGORY_NAME, P.SELLER_NAME, P.MANUFACTURER, P.ORIGIN_COUNTRY, P.COST_PRICE,
+		P.SALE_PRICE, P.DISCOUNT_PRICE, P.STOCK_QUANTITY, P.SAFETY_STOCK_QUANTITY, P.TAX_TYPE,
+		P.SHIPPING_TYPE, P.SHIPPING_FEE, P.PRODUCT_STATUS, P.USE_YN, P.DISPLAY_YN,
+		P.DISPLAY_START_DATE, P.DISPLAY_END_DATE, P.SHORT_DESCRIPTION, P.DETAIL_DESCRIPTION,
+		P.SEARCH_KEYWORDS, P.REG_DATE, P.REG_ID, P.UPDT_DATE, P.UPDT_ID
+	</sql>
+	<select id="selectProductList" resultType="productInfoDto">
+	SELECT <include refid="productColumns" />,
+		(SELECT PI.IMAGE_URL FROM product_image PI WHERE PI.PRODUCT_NO = P.PRODUCT_NO ORDER BY PI.REPRESENTATIVE_YN DESC, PI.SORT_ORDER LIMIT 1) REPRESENTATIVE_IMAGE_URL
+	FROM product_info P
+	<include refid="productSearchWhere" />
+	ORDER BY P.PRODUCT_NO DESC
+	LIMIT #{limit} OFFSET #{offset}
+	</select>
+	<select id="countProductList" resultType="int">
+	SELECT COUNT(*) FROM product_info P <include refid="productSearchWhere" />
+	</select>
+	<sql id="productSearchWhere">
+	<where>
+		<if test="keyword != null and keyword != ''">
+			<choose>
+				<when test="searchType == 'PRODUCT_NO'">AND P.PRODUCT_NO = #{keyword}</when>
+				<when test="searchType == 'PRODUCT_CODE'">AND P.PRODUCT_CODE LIKE CONCAT('%', #{keyword}, '%')</when>
+				<otherwise>AND (P.PRODUCT_NAME_KO LIKE CONCAT('%', #{keyword}, '%') OR P.PRODUCT_NAME_EN LIKE CONCAT('%', #{keyword}, '%'))</otherwise>
+			</choose>
+		</if>
+		<if test="registeredFrom != null">AND P.REG_DATE &gt;= #{registeredFrom}</if>
+		<if test="registeredTo != null">AND P.REG_DATE &lt;= #{registeredTo}</if>
+		<if test="statuses != null and statuses.size() > 0">AND P.PRODUCT_STATUS IN <foreach collection="statuses" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+		<if test="brands != null and brands.size() > 0">AND P.BRAND_NAME IN <foreach collection="brands" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+		<if test="categories != null and categories.size() > 0">AND P.CATEGORY_NAME IN <foreach collection="categories" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+	</where>
+	</sql>
+	<select id="selectProductBrands" resultType="String">SELECT DISTINCT BRAND_NAME FROM product_info WHERE BRAND_NAME IS NOT NULL AND BRAND_NAME != '' ORDER BY BRAND_NAME</select>
+	<select id="selectProductCategories" resultType="String">SELECT DISTINCT CATEGORY_NAME FROM product_info WHERE CATEGORY_NAME IS NOT NULL AND CATEGORY_NAME != '' ORDER BY CATEGORY_NAME</select>
+	<select id="selectProductInfo" resultType="productInfoDto">
+	SELECT <include refid="productColumns" /> FROM product_info P WHERE P.PRODUCT_NO = #{productNo}
+	</select>
+	<select id="selectProductImages" resultType="com.polar.bear.api.models.ProductImageDto">
+	SELECT PRODUCT_IMAGE_NO, PRODUCT_NO, IMAGE_URL, ORIGINAL_FILE_NAME, REPRESENTATIVE_YN, SORT_ORDER, REG_ID
+	FROM product_image WHERE PRODUCT_NO = #{productNo} ORDER BY REPRESENTATIVE_YN DESC, SORT_ORDER
+	</select>
+	<insert id="insertProductInfo" parameterType="productInfoDto" useGeneratedKeys="true" keyProperty="productNo">
+	INSERT INTO product_info (PRODUCT_CODE, PRODUCT_NAME_KO, PRODUCT_NAME_EN, BRAND_NAME, CATEGORY_NAME,
+		SELLER_NAME, MANUFACTURER, ORIGIN_COUNTRY, COST_PRICE, SALE_PRICE, DISCOUNT_PRICE,
+		STOCK_QUANTITY, SAFETY_STOCK_QUANTITY, TAX_TYPE, SHIPPING_TYPE, SHIPPING_FEE,
+		PRODUCT_STATUS, USE_YN, DISPLAY_YN, DISPLAY_START_DATE, DISPLAY_END_DATE,
+		SHORT_DESCRIPTION, DETAIL_DESCRIPTION, SEARCH_KEYWORDS, REG_DATE, REG_ID, UPDT_DATE, UPDT_ID)
+	VALUES (#{productCode}, #{productNameKo}, #{productNameEn}, #{brandName}, #{categoryName},
+		#{sellerName}, #{manufacturer}, #{originCountry}, #{costPrice}, #{salePrice}, #{discountPrice},
+		#{stockQuantity}, #{safetyStockQuantity}, #{taxType}, #{shippingType}, #{shippingFee},
+		#{productStatus}, #{useYn}, #{displayYn}, #{displayStartDate}, #{displayEndDate},
+		#{shortDescription}, #{detailDescription}, #{searchKeywords}, NOW(), #{regId}, NOW(), #{regId})
+	</insert>
+	<insert id="insertProductImage" parameterType="com.polar.bear.api.models.ProductImageDto">
+	INSERT INTO product_image (PRODUCT_NO, IMAGE_URL, ORIGINAL_FILE_NAME, REPRESENTATIVE_YN, SORT_ORDER, REG_DATE, REG_ID)
+	VALUES (#{productNo}, #{imageUrl}, #{originalFileName}, #{representativeYn}, #{sortOrder}, NOW(), #{regId})
+	</insert>
+</mapper>

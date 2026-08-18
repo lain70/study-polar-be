@@ -3,6 +3,9 @@ package com.polar.bear.api.controllers;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.polar.bear.api.exception.ExpiredTokenException;
 import com.polar.bear.api.exception.NotAuthenticationException;
 import com.polar.bear.api.exception.WrongTokenException;
@@ -10,9 +13,12 @@ import com.polar.bear.api.jwt.JwtUtil;
 import com.polar.bear.api.jwt.LoginRequestVo;
 import com.polar.bear.api.jwt.LoginResponseVo;
 import com.polar.bear.api.models.CsrInfoDto;
+import com.polar.bear.api.models.UserInfoDto;
 import com.polar.bear.api.redis.LoginRedisRepository;
 import com.polar.bear.api.redis.LoginRedisVo;
 import com.polar.bear.api.service.CsrInfoService;
+import com.polar.bear.api.service.LoginHistoryService;
+import com.polar.bear.api.service.UserInfoService;
 import com.polar.bear.api.utils.ResponseUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +26,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -35,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/auth")
 @Slf4j
 public class JwtAuthController {
+	private static final String USER_KEY_PREFIX = "USER:";
 	
 	@Value("${service-key}")
     private String originServiceKey;
@@ -50,6 +59,12 @@ public class JwtAuthController {
 	
 	@Autowired
 	private CsrInfoService csrInfoService;
+
+	@Autowired
+	private UserInfoService userInfoService;
+
+	@Autowired
+	private LoginHistoryService loginHistoryService;
 	
 	@RequestMapping(
 			value="/login",
@@ -59,11 +74,12 @@ public class JwtAuthController {
 	)
 	public ResponseEntity<?> createAuthToken(
 			@RequestHeader(value = "x-auth-user-service-key") String serviceKey,
-			@RequestBody LoginRequestVo loginRequestVo
+			@RequestBody LoginRequestVo loginRequestVo,
+			HttpServletRequest request
 			) throws Exception{
-		String csrKey = null;
-		Integer csrNo = null;
-		String csrId = null;
+		String userKey = null;
+		Integer userNo = null;
+		String userId = null;
 		String accessToken = null;
         String refreshToken = null;
         
@@ -79,54 +95,53 @@ public class JwtAuthController {
         }
         
         LoginRedisVo loginRedisVo = null;
-        CsrInfoDto csrInfoDto = csrInfoService.selectCsrInfoDetailById(loginRequestVo.getCsrId());
+        if (loginRequestVo == null || StringUtils.isBlank(loginRequestVo.getUserId())
+                || StringUtils.isBlank(loginRequestVo.getUserPwd())) {
+            return ResponseUtil.getResponseEntity("아이디와 비밀번호를 입력해 주세요.", headers, HttpStatus.BAD_REQUEST);
+        }
+
+        UserInfoDto userInfoDto = userInfoService.selectUserInfoById(loginRequestVo.getUserId());
         
-        if(csrInfoDto == null) {
+        if(userInfoDto == null) {
         	return ResponseUtil.getResponseEntity("ID/비번이 올바르지 않습니다.", headers, HttpStatus.UNAUTHORIZED);
 			
         }
         
-        csrKey = String.valueOf(csrInfoDto.getCsrNo());
-		csrNo = csrInfoDto.getCsrNo();
-    	csrId = csrInfoDto.getCsrId();
+        userKey = USER_KEY_PREFIX + userInfoDto.getUserNo();
+		userNo = userInfoDto.getUserNo();
+		userId = userInfoDto.getUserId();
         
-        if(!passwordEncoder.matches(loginRequestVo.getCsrPwd(), csrInfoDto.getCsrPwd())){        	
-        	if(csrInfoDto.getLoginFailCnt() >= 4) {
-            	return ResponseUtil.getResponseEntity("비밀번호가 5회 이상 틀렸습니다. 관리", headers, HttpStatus.UNAUTHORIZED);
-            }else {
-            	csrInfoService.updateCsrLoginFailCnt(csrId, csrInfoDto.getLoginFailCnt() + 1);
-            	return ResponseUtil.getResponseEntity("ID/비번이 올바르지 않습니다.", headers, HttpStatus.UNAUTHORIZED);	
-            }
+        if(!passwordEncoder.matches(loginRequestVo.getUserPwd(), userInfoDto.getUserPwd())){
+			return ResponseUtil.getResponseEntity("ID/비번이 올바르지 않습니다.", headers, HttpStatus.UNAUTHORIZED);
         }
         
-        loginRedisVo = this.loginRedisRepository.findById(csrKey);
+        loginRedisVo = this.loginRedisRepository.findById(userKey);
         if(loginRedisVo != null) {
         	String preAccessToken = loginRedisVo.getAccessToken();
         	
         	if(this.jwtUtil.isTokenExpired(preAccessToken)) {
-        		loginRedisVo.refreshInfo(csrInfoDto);
-        		accessToken = this.jwtUtil.generateToken(csrKey, csrId, "ACCESS");
+				loginRedisVo.refreshInfo(userInfoDto);
+				accessToken = this.jwtUtil.generateToken(userKey, userId, "ACCESS");
         	} else {
                 accessToken = preAccessToken;
             }
 
-            refreshToken = this.jwtUtil.generateToken(csrKey, csrId, "REFRESH");
+            refreshToken = this.jwtUtil.generateToken(userKey, userId, "REFRESH");
         }else {
-        	accessToken = this.jwtUtil.generateToken(csrKey, csrId, "ACCESS");
-        	refreshToken = this.jwtUtil.generateToken(csrKey, csrId, "REFRESH");
+			accessToken = this.jwtUtil.generateToken(userKey, userId, "ACCESS");
+			refreshToken = this.jwtUtil.generateToken(userKey, userId, "REFRESH");
         }
         
         if(accessToken == null || refreshToken == null) {
         	return ResponseUtil.getResponseEntity("인증된 사용자가 아닙니다.", headers, HttpStatus.UNAUTHORIZED);
         }else {
         	long accessTokenTime = this.jwtUtil.getAccessTokenTime(accessToken);
-        	loginRedisVo = new LoginRedisVo(csrKey, csrId, "CSR", csrInfoDto, accessToken, refreshToken, accessTokenTime);
+			loginRedisVo = new LoginRedisVo(userKey, userId, "USER", userInfoDto, accessToken, refreshToken, accessTokenTime);
+			loginHistoryService.saveUserLoginHistory(userNo, request);
         	this.loginRedisRepository.save(loginRedisVo);
         }
         
-        csrInfoService.updateCsrLastLoginDate(csrId);
-        
-        return ResponseEntity.ok(new LoginResponseVo(csrNo, csrId, accessToken, refreshToken));
+        return ResponseEntity.ok(new LoginResponseVo(userNo, userId, accessToken, refreshToken));
         
 	}
 		
@@ -139,9 +154,9 @@ public class JwtAuthController {
     public ResponseEntity<?> refreshAccessToken(
             @RequestParam String refreshToken
     ) throws Exception {
-    	CsrInfoDto csrInfoDto = null;
-		Integer csrNo = null;
-		String csrId = null;
+		UserInfoDto userInfoDto = null;
+		Integer userNo = null;
+		String userId = null;
         String accessToken = null;
         
         LoginRedisVo loginRedisVo = this.jwtUtil.validationRefreshToken(refreshToken);
@@ -152,21 +167,23 @@ public class JwtAuthController {
 
 
             if (loginRedisVo != null) {
-            	csrInfoDto = this.csrInfoService.selectCsrInfoDetailById(loginRedisVo.getCsrId());
+				userInfoDto = this.userInfoService.selectUserInfoById(loginRedisVo.getUserId());
+				userNo = userInfoDto.getUserNo();
+				userId = userInfoDto.getUserId();
 
                 String preAccessToken = loginRedisVo.getAccessToken();
                 if(this.jwtUtil.isTokenExpired(preAccessToken)) {
-                    accessToken = this.jwtUtil.generateToken(loginRedisVo.getCsrKey(), loginRedisVo.getCsrId(), "ACCESS");
+                    accessToken = this.jwtUtil.generateToken(loginRedisVo.getUserKey(), loginRedisVo.getUserId(), "ACCESS");
                 } else {
                     accessToken = preAccessToken;
                 }
-                refreshToken = this.jwtUtil.generateToken(loginRedisVo.getCsrKey(), loginRedisVo.getCsrId(), "REFRESH");
+                refreshToken = this.jwtUtil.generateToken(loginRedisVo.getUserKey(), loginRedisVo.getUserId(), "REFRESH");
 
                 long accessTokenTime = this.jwtUtil.getAccessTokenTime(accessToken);
-                loginRedisVo = new LoginRedisVo(loginRedisVo.getCsrKey(), "CSR", loginRedisVo.getCsrId(), csrInfoDto, accessToken, refreshToken, accessTokenTime);                
+                loginRedisVo = new LoginRedisVo(loginRedisVo.getUserKey(), loginRedisVo.getUserId(), "USER", userInfoDto, accessToken, refreshToken, accessTokenTime);
                 this.loginRedisRepository.save(loginRedisVo);
 
-                return ResponseEntity.ok(new LoginResponseVo(csrNo, csrId, accessToken, refreshToken));
+                return ResponseEntity.ok(new LoginResponseVo(userNo, userId, accessToken, refreshToken));
             } else {
             	return ResponseUtil.getResponseEntity("인증된 사용자가 아닙니다.", headers, HttpStatus.UNAUTHORIZED);
             }
@@ -185,12 +202,14 @@ public class JwtAuthController {
     @RequestMapping(    		
             value = "/logout",
             method = RequestMethod.POST,
-            consumes="application/json",
             produces="application/json"
     )
     public ResponseEntity<?> csrLogout(
             @RequestHeader(value = "Authorization") String token,
-            @RequestHeader(value = "x-auth-user-service-key") String serviceKey
+            @RequestHeader(value = "x-auth-user-service-key") String serviceKey,
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Authentication authentication
     ) throws Exception {
     	
     	
@@ -204,9 +223,10 @@ public class JwtAuthController {
             LoginRedisVo loginRedisVo = this.jwtUtil.validateAccessToken(token);
 
             if (loginRedisVo != null) {
-                if(loginRedisVo.getCsrKey() != null) {
-                    this.loginRedisRepository.delete(loginRedisVo.getCsrKey());
+                if(loginRedisVo.getUserKey() != null) {
+                    this.loginRedisRepository.delete(loginRedisVo.getUserKey());
                 }
+                new SecurityContextLogoutHandler().logout(request, response, authentication);
                 return ResponseUtil.getResponseEntity("로그 아웃 되었습니다.", headers, HttpStatus.OK);
             } else {
                 return ResponseUtil.getResponseEntity("로그 아웃에 실패 하였습니다.", headers, HttpStatus.NOT_ACCEPTABLE);

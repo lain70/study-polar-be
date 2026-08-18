@@ -22,13 +22,13 @@ public class LoginRedisRepositoryImpl implements LoginRedisRepository {
 
 	@Override
 	public void save(LoginRedisVo loginRedisVo) {
-		this.hashOperations.put("polar_token", loginRedisVo.getCsrKey(), loginRedisVo);
+		this.hashOperations.put("polar_token", loginRedisVo.getUserKey(), loginRedisVo);
 
 	}
 
 	@Override
 	public void update(LoginRedisVo loginRedisVo) {
-		this.hashOperations.put("polar_token", loginRedisVo.getCsrKey(), loginRedisVo);
+		this.hashOperations.put("polar_token", loginRedisVo.getUserKey(), loginRedisVo);
 
 	}
 
