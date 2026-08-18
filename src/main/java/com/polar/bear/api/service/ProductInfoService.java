@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import com.polar.bear.api.mappers.ProductInfoMapper;
 import com.polar.bear.api.models.ProductImageDto;
 import com.polar.bear.api.models.ProductInfoDto;
+import com.polar.bear.api.utils.ProductImagePathResolver;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -106,7 +107,7 @@ public class ProductInfoService {
 	}
 
 	private Path saveImage(MultipartFile image) throws IOException {
-		Path storageDirectory = Paths.get(imageStoragePath).toAbsolutePath().normalize();
+		Path storageDirectory = ProductImagePathResolver.resolve(imageStoragePath);
 		Files.createDirectories(storageDirectory);
 		String originalFileName = StringUtils.defaultString(image.getOriginalFilename());
 		String extension = originalFileName.lastIndexOf('.') >= 0

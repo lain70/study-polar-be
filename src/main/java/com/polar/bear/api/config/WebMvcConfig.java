@@ -2,6 +2,7 @@ package com.polar.bear.api.config;
 
 import com.polar.bear.api.interceptor.HttpLoggingInterceptor;
 import com.polar.bear.api.interceptor.HttpRequestInterceptor;
+import com.polar.bear.api.utils.ProductImagePathResolver;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -36,7 +37,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
-		String location = java.nio.file.Paths.get(productImageStoragePath).toAbsolutePath().normalize().toUri().toString();
+		String location = ProductImagePathResolver.resolve(productImageStoragePath).toUri().toString();
 		registry.addResourceHandler("/product-images/**").addResourceLocations(location);
 	}
 
