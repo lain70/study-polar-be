@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.polar.bear.api.models.ProductImageDto;
 import com.polar.bear.api.models.ProductInfoDto;
+import com.polar.bear.api.models.CustomerProductDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -23,6 +24,7 @@ public interface ProductInfoMapper {
 	List<String> selectProductCategories() throws Exception;
 	ProductInfoDto selectProductInfo(@Param("productNo") Long productNo) throws Exception;
 	List<ProductImageDto> selectProductImages(@Param("productNo") Long productNo) throws Exception;
+	List<CustomerProductDto> selectFeaturedProducts(@Param("limit") int limit) throws Exception;
 	int insertProductInfo(ProductInfoDto productInfoDto) throws Exception;
 	int insertProductImage(ProductImageDto productImageDto) throws Exception;
 }
