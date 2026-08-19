@@ -14,14 +14,17 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Alias("productInfoDto")
-public class ProductInfoDto implements Serializable {
+@Alias("goodsInfoDto")
+public class GoodsInfoDto implements Serializable {
 	private static final long serialVersionUID = -2024550559477689007L;
-	private Long productNo;
-	private String productCode;
-	private String productNameKo;
-	private String productNameEn;
-	private String brandName;
+	private Long goodsNo;
+	private String goodsCode;
+	private String goodsNameKo;
+	private String goodsNameEn;
+	private Long brandNo;
+	private String brandNameKo;
+	private String brandNameEn;
+	private Long categoryNo;
 	private String categoryName;
 	private String sellerName;
 	private String manufacturer;
@@ -34,7 +37,7 @@ public class ProductInfoDto implements Serializable {
 	private String taxType;
 	private String shippingType;
 	private BigDecimal shippingFee;
-	private String productStatus;
+	private String goodsStatus;
 	private String useYn;
 	private String displayYn;
 	private LocalDateTime displayStartDate;
@@ -47,5 +50,5 @@ public class ProductInfoDto implements Serializable {
 	private LocalDateTime updtDate;
 	private String updtId;
 	private String representativeImageUrl;
-	private List<ProductImageDto> images;
+	private List<GoodsImageDto> images;
 }

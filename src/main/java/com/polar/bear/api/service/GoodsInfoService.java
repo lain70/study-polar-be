@@ -12,11 +12,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.time.LocalDateTime;
 
-import com.polar.bear.api.mappers.ProductInfoMapper;
-import com.polar.bear.api.models.CustomerProductDto;
-import com.polar.bear.api.models.ProductImageDto;
-import com.polar.bear.api.models.ProductInfoDto;
-import com.polar.bear.api.utils.ProductImagePathResolver;
+import com.polar.bear.api.mappers.GoodsInfoMapper;
+import com.polar.bear.api.models.CustomerGoodsDto;
+import com.polar.bear.api.models.GoodsImageDto;
+import com.polar.bear.api.models.GoodsInfoDto;
+import com.polar.bear.api.utils.GoodsImagePathResolver;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -27,52 +27,52 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class ProductInfoService {
-	private static final String IMAGE_URL_PREFIX = "/product-images/";
+public class GoodsInfoService {
+	private static final String IMAGE_URL_PREFIX = "/goods-images/";
 	private static final long MAX_IMAGE_SIZE = 10L * 1024L * 1024L;
-	private final ProductInfoMapper productInfoMapper;
+	private final GoodsInfoMapper goodsInfoMapper;
 
-	@Value("${product.image-storage-path:./uploads/product}")
+	@Value("${goods.image-storage-path:./uploads/goods}")
 	private String imageStoragePath;
 
-	public Map<String, Object> selectProductList(String searchType, String keyword, LocalDateTime registeredFrom,
-			LocalDateTime registeredTo, List<String> statuses, List<String> brands, List<String> categories,
+	public Map<String, Object> selectGoodsList(String searchType, String keyword, LocalDateTime registeredFrom,
+			LocalDateTime registeredTo, List<String> statuses, List<Long> brandNos, List<Long> categoryNos,
 			int page, int size) throws Exception {
 		int safePage = Math.max(page, 1);
 		int safeSize = Math.min(Math.max(size, 1), 100);
 		Map<String, Object> result = new HashMap<>();
 		String trimmedKeyword = StringUtils.trimToNull(keyword);
-		result.put("items", productInfoMapper.selectProductList(searchType, trimmedKeyword, registeredFrom,
-				registeredTo, statuses, brands, categories, (safePage - 1) * safeSize, safeSize));
-		result.put("totalCount", productInfoMapper.countProductList(searchType, trimmedKeyword, registeredFrom,
-				registeredTo, statuses, brands, categories));
-		result.put("brands", productInfoMapper.selectProductBrands());
-		result.put("categories", productInfoMapper.selectProductCategories());
+		result.put("items", goodsInfoMapper.selectGoodsList(searchType, trimmedKeyword, registeredFrom,
+				registeredTo, statuses, brandNos, categoryNos, (safePage - 1) * safeSize, safeSize));
+		result.put("totalCount", goodsInfoMapper.countGoodsList(searchType, trimmedKeyword, registeredFrom,
+				registeredTo, statuses, brandNos, categoryNos));
+		result.put("brands", goodsInfoMapper.selectGoodsBrands());
+		result.put("categories", goodsInfoMapper.selectGoodsCategories());
 		result.put("page", safePage);
 		result.put("size", safeSize);
 		return result;
 	}
 
-	public ProductInfoDto selectProductInfo(Long productNo) throws Exception {
-		ProductInfoDto product = productInfoMapper.selectProductInfo(productNo);
-		if (product != null) {
-			product.setImages(productInfoMapper.selectProductImages(productNo));
+	public GoodsInfoDto selectGoodsInfo(Long goodsNo) throws Exception {
+		GoodsInfoDto goods = goodsInfoMapper.selectGoodsInfo(goodsNo);
+		if (goods != null) {
+			goods.setImages(goodsInfoMapper.selectGoodsImages(goodsNo));
 		}
-		return product;
+		return goods;
 	}
 
-	public List<CustomerProductDto> selectFeaturedProducts(int limit) throws Exception {
-		return productInfoMapper.selectFeaturedProducts(Math.min(Math.max(limit, 1), 20));
+	public List<CustomerGoodsDto> selectFeaturedGoods(int limit) throws Exception {
+		return goodsInfoMapper.selectFeaturedGoods(Math.min(Math.max(limit, 1), 20));
 	}
 
 	@Transactional(rollbackFor = Exception.class)
-	public Long insertProductInfo(ProductInfoDto product, List<MultipartFile> images) throws Exception {
+	public Long insertGoodsInfo(GoodsInfoDto goods, List<MultipartFile> images) throws Exception {
 		List<Path> savedFiles = new ArrayList<>();
 		try {
 			if (images != null && images.size() > 5) {
 				throw new IllegalArgumentException("상품 이미지는 최대 5개까지 등록할 수 있습니다.");
 			}
-			productInfoMapper.insertProductInfo(product);
+			goodsInfoMapper.insertGoodsInfo(goods);
 			if (images != null) {
 				for (int index = 0; index < images.size(); index++) {
 					MultipartFile image = images.get(index);
@@ -82,17 +82,17 @@ public class ProductInfoService {
 					validateImage(image);
 					Path savedFile = saveImage(image);
 					savedFiles.add(savedFile);
-					ProductImageDto imageDto = new ProductImageDto();
-					imageDto.setProductNo(product.getProductNo());
+					GoodsImageDto imageDto = new GoodsImageDto();
+					imageDto.setGoodsNo(goods.getGoodsNo());
 					imageDto.setImageUrl(IMAGE_URL_PREFIX + savedFile.getFileName());
 					imageDto.setOriginalFileName(Paths.get(image.getOriginalFilename()).getFileName().toString());
 					imageDto.setRepresentativeYn(index == 0 ? "Y" : "N");
 					imageDto.setSortOrder(index);
-					imageDto.setRegId(product.getRegId());
-					productInfoMapper.insertProductImage(imageDto);
+					imageDto.setRegId(goods.getRegId());
+					goodsInfoMapper.insertGoodsImage(imageDto);
 				}
 			}
-			return product.getProductNo();
+			return goods.getGoodsNo();
 		} catch (Exception e) {
 			for (Path savedFile : savedFiles) {
 				Files.deleteIfExists(savedFile);
@@ -112,7 +112,7 @@ public class ProductInfoService {
 	}
 
 	private Path saveImage(MultipartFile image) throws IOException {
-		Path storageDirectory = ProductImagePathResolver.resolve(imageStoragePath);
+		Path storageDirectory = GoodsImagePathResolver.resolve(imageStoragePath);
 		Files.createDirectories(storageDirectory);
 		String originalFileName = StringUtils.defaultString(image.getOriginalFilename());
 		String extension = originalFileName.lastIndexOf('.') >= 0

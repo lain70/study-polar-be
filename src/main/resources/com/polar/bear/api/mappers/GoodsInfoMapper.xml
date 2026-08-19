@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.polar.bear.api.mappers.GoodsInfoMapper">
+	<sql id="goodsColumns">
+		P.GOODS_NO, P.GOODS_CODE, P.GOODS_NAME_KO, P.GOODS_NAME_EN, P.BRAND_NO,
+		B.BRAND_NAME_KO, B.BRAND_NAME_EN, P.CATEGORY_NO, C.CATEGORY_NAME,
+		P.SELLER_NAME, P.MANUFACTURER, P.ORIGIN_COUNTRY, P.COST_PRICE,
+		P.SALE_PRICE, P.DISCOUNT_PRICE, P.STOCK_QUANTITY, P.SAFETY_STOCK_QUANTITY, P.TAX_TYPE,
+		P.SHIPPING_TYPE, P.SHIPPING_FEE, P.GOODS_STATUS, P.USE_YN, P.DISPLAY_YN,
+		P.DISPLAY_START_DATE, P.DISPLAY_END_DATE, P.SHORT_DESCRIPTION, P.DETAIL_DESCRIPTION,
+		P.SEARCH_KEYWORDS, P.REG_DATE, P.REG_ID, P.UPDT_DATE, P.UPDT_ID
+	</sql>
+	<select id="selectGoodsList" resultType="goodsInfoDto">
+	SELECT <include refid="goodsColumns" />,
+		(SELECT PI.IMAGE_URL FROM goods_image PI WHERE PI.GOODS_NO = P.GOODS_NO ORDER BY PI.REPRESENTATIVE_YN DESC, PI.SORT_ORDER LIMIT 1) REPRESENTATIVE_IMAGE_URL
+	FROM goods_info P
+	LEFT JOIN brand_info B ON B.BRAND_NO = P.BRAND_NO
+	INNER JOIN category_info C ON C.CATEGORY_NO = P.CATEGORY_NO
+	<include refid="goodsSearchWhere" />
+	ORDER BY P.GOODS_NO DESC
+	LIMIT #{limit} OFFSET #{offset}
+	</select>
+	<select id="countGoodsList" resultType="int">
+	SELECT COUNT(*) FROM goods_info P <include refid="goodsSearchWhere" />
+	</select>
+	<sql id="goodsSearchWhere">
+	<where>
+		<if test="keyword != null and keyword != ''">
+			<choose>
+				<when test="searchType == 'GOODS_NO'">AND P.GOODS_NO = #{keyword}</when>
+				<when test="searchType == 'GOODS_CODE'">AND P.GOODS_CODE LIKE CONCAT('%', #{keyword}, '%')</when>
+				<otherwise>AND (P.GOODS_NAME_KO LIKE CONCAT('%', #{keyword}, '%') OR P.GOODS_NAME_EN LIKE CONCAT('%', #{keyword}, '%'))</otherwise>
+			</choose>
+		</if>
+		<if test="registeredFrom != null">AND P.REG_DATE &gt;= #{registeredFrom}</if>
+		<if test="registeredTo != null">AND P.REG_DATE &lt;= #{registeredTo}</if>
+		<if test="statuses != null and statuses.size() > 0">AND P.GOODS_STATUS IN <foreach collection="statuses" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+		<if test="brandNos != null and brandNos.size() > 0">AND P.BRAND_NO IN <foreach collection="brandNos" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+		<if test="categoryNos != null and categoryNos.size() > 0">AND P.CATEGORY_NO IN <foreach collection="categoryNos" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+	</where>
+	</sql>
+	<select id="selectGoodsBrands" resultType="brandInfoDto">
+	SELECT BRAND_NO, BRAND_NAME_KO, BRAND_NAME_EN, BRAND_COUNTRY, BRAND_LOGO_IMAGE_URL,
+		DISPLAY_YN, USE_YN, UPDT_DATE, UPDT_ID, REG_DATE, REG_ID
+	FROM brand_info
+	WHERE USE_YN = 'Y'
+	ORDER BY BRAND_NAME_KO
+	</select>
+	<select id="selectGoodsCategories" resultType="categoryInfoDto">
+	SELECT CATEGORY_NO, CATEGORY_NAME, CATEGORY_DEPTH, PARENT_CATEGORY_NO,
+		USE_YN, DISPLAY_YN, UPDT_DATE, UPDT_ID, REG_DATE, REG_ID
+	FROM category_info
+	WHERE USE_YN = 'Y'
+	ORDER BY CATEGORY_DEPTH, CATEGORY_NO
+	</select>
+	<select id="selectGoodsInfo" resultType="goodsInfoDto">
+	SELECT <include refid="goodsColumns" />
+	FROM goods_info P
+	LEFT JOIN brand_info B ON B.BRAND_NO = P.BRAND_NO
+	INNER JOIN category_info C ON C.CATEGORY_NO = P.CATEGORY_NO
+	WHERE P.GOODS_NO = #{goodsNo}
+	</select>
+	<select id="selectGoodsImages" resultType="com.polar.bear.api.models.GoodsImageDto">
+	SELECT GOODS_IMAGE_NO, GOODS_NO, IMAGE_URL, ORIGINAL_FILE_NAME, REPRESENTATIVE_YN, SORT_ORDER, REG_ID
+	FROM goods_image WHERE GOODS_NO = #{goodsNo} ORDER BY REPRESENTATIVE_YN DESC, SORT_ORDER
+	</select>
+	<select id="selectFeaturedGoods" resultType="customerGoodsDto">
+	SELECT P.GOODS_NO, P.GOODS_NAME_KO, P.GOODS_NAME_EN, P.BRAND_NO,
+		B.BRAND_NAME_KO, B.BRAND_NAME_EN, P.CATEGORY_NO, C.CATEGORY_NAME,
+		P.SALE_PRICE, P.DISCOUNT_PRICE, P.GOODS_STATUS,
+		(SELECT PI.IMAGE_URL FROM goods_image PI WHERE PI.GOODS_NO = P.GOODS_NO ORDER BY PI.REPRESENTATIVE_YN DESC, PI.SORT_ORDER LIMIT 1) REPRESENTATIVE_IMAGE_URL
+	FROM goods_info P
+	LEFT JOIN brand_info B ON B.BRAND_NO = P.BRAND_NO
+	INNER JOIN category_info C ON C.CATEGORY_NO = P.CATEGORY_NO
+	WHERE P.USE_YN = 'Y'
+		AND P.DISPLAY_YN = 'Y'
+		AND P.GOODS_STATUS IN ('ON_SALE', 'SOLD_OUT')
+		AND (P.DISPLAY_START_DATE IS NULL OR P.DISPLAY_START_DATE &lt;= NOW())
+		AND (P.DISPLAY_END_DATE IS NULL OR P.DISPLAY_END_DATE &gt;= NOW())
+	ORDER BY P.GOODS_NO DESC
+	LIMIT #{limit}
+	</select>
+	<insert id="insertGoodsInfo" parameterType="goodsInfoDto" useGeneratedKeys="true" keyProperty="goodsNo">
+	INSERT INTO goods_info (GOODS_CODE, GOODS_NAME_KO, GOODS_NAME_EN, BRAND_NO, CATEGORY_NO,
+		SELLER_NAME, MANUFACTURER, ORIGIN_COUNTRY, COST_PRICE, SALE_PRICE, DISCOUNT_PRICE,
+		STOCK_QUANTITY, SAFETY_STOCK_QUANTITY, TAX_TYPE, SHIPPING_TYPE, SHIPPING_FEE,
+		GOODS_STATUS, USE_YN, DISPLAY_YN, DISPLAY_START_DATE, DISPLAY_END_DATE,
+		SHORT_DESCRIPTION, DETAIL_DESCRIPTION, SEARCH_KEYWORDS, REG_DATE, REG_ID, UPDT_DATE, UPDT_ID)
+	VALUES (#{goodsCode}, #{goodsNameKo}, #{goodsNameEn}, #{brandNo}, #{categoryNo},
+		#{sellerName}, #{manufacturer}, #{originCountry}, #{costPrice}, #{salePrice}, #{discountPrice},
+		#{stockQuantity}, #{safetyStockQuantity}, #{taxType}, #{shippingType}, #{shippingFee},
+		#{goodsStatus}, #{useYn}, #{displayYn}, #{displayStartDate}, #{displayEndDate},
+		#{shortDescription}, #{detailDescription}, #{searchKeywords}, NOW(), #{regId}, NOW(), #{regId})
+	</insert>
+	<insert id="insertGoodsImage" parameterType="com.polar.bear.api.models.GoodsImageDto">
+	INSERT INTO goods_image (GOODS_NO, IMAGE_URL, ORIGINAL_FILE_NAME, REPRESENTATIVE_YN, SORT_ORDER, REG_DATE, REG_ID)
+	VALUES (#{goodsNo}, #{imageUrl}, #{originalFileName}, #{representativeYn}, #{sortOrder}, NOW(), #{regId})
+	</insert>
+</mapper>
