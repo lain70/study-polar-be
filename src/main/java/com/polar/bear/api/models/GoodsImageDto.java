@@ -9,10 +9,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ProductImageDto implements Serializable {
+public class GoodsImageDto implements Serializable {
 	private static final long serialVersionUID = 3428389769464672558L;
-	private Long productImageNo;
-	private Long productNo;
+	private Long goodsImageNo;
+	private Long goodsNo;
 	private String imageUrl;
 	private String originalFileName;
 	private String representativeYn;

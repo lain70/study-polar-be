@@ -11,15 +11,18 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Alias("customerProductDto")
-public class CustomerProductDto {
-	private Long productNo;
-	private String productNameKo;
-	private String productNameEn;
-	private String brandName;
+@Alias("customerGoodsDto")
+public class CustomerGoodsDto {
+	private Long goodsNo;
+	private String goodsNameKo;
+	private String goodsNameEn;
+	private Long brandNo;
+	private String brandNameKo;
+	private String brandNameEn;
+	private Long categoryNo;
 	private String categoryName;
 	private BigDecimal salePrice;
 	private BigDecimal discountPrice;
-	private String productStatus;
+	private String goodsStatus;
 	private String representativeImageUrl;
 }

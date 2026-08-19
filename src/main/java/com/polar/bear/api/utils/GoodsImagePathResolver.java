@@ -4,10 +4,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public final class ProductImagePathResolver {
+public final class GoodsImagePathResolver {
 	private static final String BACKEND_MODULE_DIRECTORY = "polar-be";
 
-	private ProductImagePathResolver() {
+	private GoodsImagePathResolver() {
 	}
 
 	public static Path resolve(String configuredPath) {

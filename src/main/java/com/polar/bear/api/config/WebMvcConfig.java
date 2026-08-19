@@ -2,7 +2,7 @@ package com.polar.bear.api.config;
 
 import com.polar.bear.api.interceptor.HttpLoggingInterceptor;
 import com.polar.bear.api.interceptor.HttpRequestInterceptor;
-import com.polar.bear.api.utils.ProductImagePathResolver;
+import com.polar.bear.api.utils.GoodsImagePathResolver;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -14,8 +14,8 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
-	@org.springframework.beans.factory.annotation.Value("${product.image-storage-path:./uploads/product}")
-	private String productImageStoragePath;
+	@org.springframework.beans.factory.annotation.Value("${goods.image-storage-path:./uploads/goods}")
+	private String goodsImageStoragePath;
 	
     private final HttpRequestInterceptor httpRequestInterceptor;
     private final HttpLoggingInterceptor httpLoggingInterceptor;
@@ -37,8 +37,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 	@Override
 	public void addResourceHandlers(ResourceHandlerRegistry registry) {
-		String location = ProductImagePathResolver.resolve(productImageStoragePath).toUri().toString();
-		registry.addResourceHandler("/product-images/**").addResourceLocations(location);
+		String location = GoodsImagePathResolver.resolve(goodsImageStoragePath).toUri().toString();
+		registry.addResourceHandler("/goods-images/**").addResourceLocations(location);
 	}
 
 	@Override

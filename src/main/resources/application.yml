@@ -19,5 +19,5 @@ mybatis:
     jdbc-type-for-null: null
     call-setters-on-nulls: true
 
-product:
-  image-storage-path: ${PRODUCT_IMAGE_STORAGE_PATH:./uploads/product}
+goods:
+  image-storage-path: ${GOODS_IMAGE_STORAGE_PATH:./uploads/goods}
