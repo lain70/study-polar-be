@@ -21,4 +21,28 @@
 	FROM admin_info
 	WHERE ADMIN_ID = #{adminId}
 	</select>
+
+	<select id="selectAdminList" resultType="map">
+	SELECT ADMIN_NO AS adminNo, ADMIN_ID AS adminId, ADMIN_NAME AS adminName, ADMIN_PHONE AS adminPhone,
+		ADMIN_DEPARTMENT AS adminDepartment, ADMIN_POSITION AS adminPosition, ADMIN_STATUS AS adminStatus,
+		USE_YN AS useYn, REG_DATE AS regDate
+	FROM admin_info
+	<where><if test="keyword != null and keyword != ''"><choose><when test="searchType == 'ADMIN_NO'">ADMIN_NO = #{keyword}</when><when test="searchType == 'ADMIN_ID'">ADMIN_ID LIKE CONCAT('%', #{keyword}, '%')</when><otherwise>ADMIN_NAME LIKE CONCAT('%', #{keyword}, '%')</otherwise></choose></if><if test="registeredFrom != null and registeredFrom != ''">AND REG_DATE &gt;= CONCAT(#{registeredFrom}, ' 00:00:00')</if><if test="registeredTo != null and registeredTo != ''">AND REG_DATE &lt;= CONCAT(#{registeredTo}, ' 23:59:59')</if><if test="departments != null and departments.size() > 0">AND ADMIN_DEPARTMENT IN <foreach collection="departments" item="item" open="(" separator="," close=")">#{item}</foreach></if><if test="positions != null and positions.size() > 0">AND ADMIN_POSITION IN <foreach collection="positions" item="item" open="(" separator="," close=")">#{item}</foreach></if><if test="statuses != null and statuses.size() > 0">AND ADMIN_STATUS IN <foreach collection="statuses" item="item" open="(" separator="," close=")">#{item}</foreach></if><if test="useYns != null and useYns.size() > 0">AND USE_YN IN <foreach collection="useYns" item="item" open="(" separator="," close=")">#{item}</foreach></if></where>
+	ORDER BY ADMIN_NO DESC
+	</select>
+
+	<select id="selectAdminDetail" parameterType="Integer" resultType="map">
+	SELECT ADMIN_NO AS adminNo, ADMIN_ID AS adminId, ADMIN_NAME AS adminName, ADMIN_PHONE AS adminPhone,
+		ADMIN_DEPARTMENT AS adminDepartment, ADMIN_POSITION AS adminPosition, ADMIN_STATUS AS adminStatus,
+		USE_YN AS useYn, REG_DATE AS regDate, REG_ID AS regId, UPDT_DATE AS updtDate, UPDT_ID AS updtId
+	FROM admin_info
+	WHERE ADMIN_NO = #{adminNo}
+	</select>
+
+	<update id="updateAdmin">
+	UPDATE admin_info SET ADMIN_PHONE = #{adminPhone}, ADMIN_DEPARTMENT = #{adminDepartment},
+		ADMIN_POSITION = #{adminPosition}, ADMIN_STATUS = #{adminStatus}, USE_YN = #{useYn},
+		UPDT_DATE = NOW(), UPDT_ID = #{updtId}
+	WHERE ADMIN_NO = #{adminNo}
+	</update>
 </mapper>

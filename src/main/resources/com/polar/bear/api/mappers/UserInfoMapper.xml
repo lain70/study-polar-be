@@ -20,6 +20,28 @@
 	WHERE USER_ID = #{userId}
 	</select>
 
+	<select id="selectAdminUserList" resultType="map">
+	SELECT USER_NO AS userNo, USER_ID AS userId, USER_NAME AS userName, USER_PHONE AS userPhone,
+		USER_GRADE AS userGrade, USER_STATUS AS userStatus, REG_DATE AS regDate
+	FROM user_info
+	<where><if test="keyword != null and keyword != ''"><choose><when test="searchType == 'USER_NO'">USER_NO = #{keyword}</when><when test="searchType == 'USER_ID'">USER_ID LIKE CONCAT('%', #{keyword}, '%')</when><when test="searchType == 'USER_PHONE'">USER_PHONE LIKE CONCAT('%', #{keyword}, '%')</when><otherwise>USER_NAME LIKE CONCAT('%', #{keyword}, '%')</otherwise></choose></if><if test="registeredFrom != null and registeredFrom != ''">AND REG_DATE &gt;= CONCAT(#{registeredFrom}, ' 00:00:00')</if><if test="registeredTo != null and registeredTo != ''">AND REG_DATE &lt;= CONCAT(#{registeredTo}, ' 23:59:59')</if><if test="grades != null and grades.size() > 0">AND USER_GRADE IN <foreach collection="grades" item="item" open="(" separator="," close=")">#{item}</foreach></if><if test="statuses != null and statuses.size() > 0">AND USER_STATUS IN <foreach collection="statuses" item="item" open="(" separator="," close=")">#{item}</foreach></if></where>
+	ORDER BY USER_NO DESC
+	</select>
+
+	<select id="selectAdminUserDetail" parameterType="Integer" resultType="map">
+	SELECT USER_NO AS userNo, USER_ID AS userId, USER_NAME AS userName, USER_PHONE AS userPhone,
+		USER_GRADE AS userGrade, USER_STATUS AS userStatus, REG_DATE AS regDate, REG_ID AS regId,
+		UPDT_DATE AS updtDate, UPDT_ID AS updtId
+	FROM user_info
+	WHERE USER_NO = #{userNo}
+	</select>
+
+	<update id="updateAdminUser">
+	UPDATE user_info SET USER_PHONE = #{userPhone}, USER_GRADE = #{userGrade}, USER_STATUS = #{userStatus},
+		UPDT_DATE = NOW(), UPDT_ID = #{updtId}
+	WHERE USER_NO = #{userNo}
+	</update>
+
 	<insert id="insertUserInfo" parameterType="userInfoDto">
 	<selectKey keyProperty="userNo" resultType="Integer" order="AFTER">
 	SELECT LAST_INSERT_ID()
