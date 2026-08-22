@@ -23,6 +23,10 @@ public class HttpLoggingInterceptor extends HandlerInterceptorAdapter {
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object object, Exception arg3) throws Exception {
         LogTool logSb = (LogTool) request.getAttribute("log");
 
+        if (logSb == null || !(request instanceof ContentCachingRequestWrapper)) {
+            return;
+        }
+
         final ContentCachingRequestWrapper contentCachingRequestWrapper = (ContentCachingRequestWrapper) request;
         if (contentCachingRequestWrapper.getContentType() != null && contentCachingRequestWrapper.getContentType().contains("application/json")) {
             if (contentCachingRequestWrapper.getContentAsByteArray().length != 0) {
@@ -33,4 +37,3 @@ public class HttpLoggingInterceptor extends HandlerInterceptorAdapter {
         }
     }
 }
-
