@@ -18,6 +18,12 @@ public interface QnaInfoMapper {
 	 * @throws Exception
 	 */
 	public List<QnaInfoDto> selectQnaInfoList(Map<String, Object> params) throws Exception;
+
+	public List<QnaInfoDto> selectAdminQnaInfoList(Map<String, Object> params) throws Exception;
+
+	public Integer selectAdminQnaInfoListCnt(Map<String, Object> params) throws Exception;
+
+	public QnaInfoDto selectAdminQnaInfoDetail(Integer qnaNo) throws Exception;
 	
 	/**
 	 * 1:1문의 리스트 갯수
