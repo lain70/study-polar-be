@@ -47,6 +47,32 @@ public class QnaInfoService {
 		return QnaInfoList;
 
 	}
+
+	public Map<String, Object> selectAdminQnaInfoList(String searchType, String keyword,
+			java.time.LocalDateTime registeredFrom, java.time.LocalDateTime registeredTo,
+			List<String> answerYns, int page, int size) throws Exception {
+		int safePage = Math.max(page, 1);
+		int safeSize = Math.min(Math.max(size, 1), 100);
+		Map<String, Object> params = new HashMap<>();
+		params.put("searchType", searchType);
+		params.put("keyword", StringUtils.trimToNull(keyword));
+		params.put("registeredFrom", registeredFrom);
+		params.put("registeredTo", registeredTo);
+		params.put("answerYns", answerYns);
+		params.put("offset", (safePage - 1) * safeSize);
+		params.put("limit", safeSize);
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("items", qnaInfoMapper.selectAdminQnaInfoList(params));
+		result.put("totalCount", qnaInfoMapper.selectAdminQnaInfoListCnt(params));
+		result.put("page", safePage);
+		result.put("size", safeSize);
+		return result;
+	}
+
+	public QnaInfoDto selectAdminQnaInfoDetail(Integer qnaNo) throws Exception {
+		return qnaInfoMapper.selectAdminQnaInfoDetail(qnaNo);
+	}
 	
 	public Integer selectQnaInfoListCnt() throws Exception{
 		return qnaInfoMapper.selectQnaInfoListCnt();

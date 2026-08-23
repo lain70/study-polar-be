@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.time.LocalDateTime;
 
 import com.polar.bear.api.mappers.GoodsInfoMapper;
+import com.polar.bear.api.models.CustomerGoodsDetailDto;
 import com.polar.bear.api.models.CustomerGoodsDto;
 import com.polar.bear.api.models.GoodsImageDto;
 import com.polar.bear.api.models.GoodsInfoDto;
@@ -63,6 +64,14 @@ public class GoodsInfoService {
 
 	public List<CustomerGoodsDto> selectFeaturedGoods(int limit) throws Exception {
 		return goodsInfoMapper.selectFeaturedGoods(Math.min(Math.max(limit, 1), 20));
+	}
+
+	public CustomerGoodsDetailDto selectCustomerGoodsDetail(Long goodsNo) throws Exception {
+		CustomerGoodsDetailDto goods = goodsInfoMapper.selectCustomerGoodsDetail(goodsNo);
+		if (goods != null) {
+			goods.setImages(goodsInfoMapper.selectCustomerGoodsImages(goodsNo));
+		}
+		return goods;
 	}
 
 	@Transactional(rollbackFor = Exception.class)

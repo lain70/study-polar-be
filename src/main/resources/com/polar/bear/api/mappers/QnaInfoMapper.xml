@@ -26,6 +26,42 @@
 		count(QNA_NO)
 	FROM qna_info
     </select>
+
+	<select id="selectAdminQnaInfoList" parameterType="map" resultType="qnaInfoDto">
+	SELECT QNA_NO, QNA_USER_ID, CSR_NO, QNA_TITLE, QNA_CONTENTS, ANSWER_YN, REG_DATE, UPDT_DATE
+	FROM qna_info
+	<where>
+		<if test="searchType == 'QNA_NO' and keyword != null and keyword != ''">QNA_NO = #{keyword}</if>
+		<if test="searchType == 'QNA_TITLE' and keyword != null and keyword != ''">QNA_TITLE LIKE CONCAT('%', #{keyword}, '%')</if>
+		<if test="registeredFrom != null">AND REG_DATE &gt;= #{registeredFrom}</if>
+		<if test="registeredTo != null">AND REG_DATE &lt;= #{registeredTo}</if>
+		<if test="answerYns != null and answerYns.size() > 0">AND ANSWER_YN IN <foreach collection="answerYns" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+	</where>
+	ORDER BY REG_DATE DESC
+	LIMIT #{offset}, #{limit}
+	</select>
+
+	<select id="selectAdminQnaInfoListCnt" parameterType="map" resultType="Integer">
+	SELECT COUNT(QNA_NO)
+	FROM qna_info
+	<where>
+		<if test="searchType == 'QNA_NO' and keyword != null and keyword != ''">QNA_NO = #{keyword}</if>
+		<if test="searchType == 'QNA_TITLE' and keyword != null and keyword != ''">QNA_TITLE LIKE CONCAT('%', #{keyword}, '%')</if>
+		<if test="registeredFrom != null">AND REG_DATE &gt;= #{registeredFrom}</if>
+		<if test="registeredTo != null">AND REG_DATE &lt;= #{registeredTo}</if>
+		<if test="answerYns != null and answerYns.size() > 0">AND ANSWER_YN IN <foreach collection="answerYns" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+	</where>
+	</select>
+
+	<select id="selectAdminQnaInfoDetail" parameterType="Integer" resultType="qnaInfoDto">
+	SELECT TQI.QNA_NO, TQI.QNA_USER_ID, TQI.CSR_NO, TQI.QNA_TITLE, TQI.QNA_CONTENTS,
+		TQI.ANSWER_YN, TQI.REG_DATE, TQI.UPDT_DATE, TQR.QNA_REPLY_NO,
+		TQR.QNA_REPLY_CONTENTS, TQR.REG_DATE AS REPLY_REG_DATE,
+		TQR.UPDT_DATE AS REPLY_UPDT_DATE
+	FROM qna_info TQI
+	LEFT JOIN qna_reply TQR ON TQI.QNA_NO = TQR.QNA_NO
+	WHERE TQI.QNA_NO = #{qnaNo}
+	</select>
     
     
     <!-- 1:1 문의 내용 상세 -->
