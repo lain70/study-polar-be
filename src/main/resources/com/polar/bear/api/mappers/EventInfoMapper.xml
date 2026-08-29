@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.polar.bear.api.mappers.EventInfoMapper">
+	<sql id="eventColumns">
+		E.EVENT_NO, E.EVENT_TITLE, E.USE_YN, E.DISPLAY_YN, E.EVENT_START_DATE, E.EVENT_END_DATE,
+		E.REG_DATE, E.REG_ID, E.UPDT_DATE, E.UPDT_ID,
+		(SELECT EI.IMAGE_URL FROM event_image EI WHERE EI.EVENT_NO = E.EVENT_NO AND EI.MAIN_IMAGE_YN = 'Y' ORDER BY EI.EVENT_IMAGE_NO DESC LIMIT 1) MAIN_IMAGE_URL,
+		CASE WHEN NOW() &gt; E.EVENT_END_DATE THEN 'ENDED' ELSE 'ONGOING' END PROGRESS_STATUS
+	</sql>
+	<select id="selectCustomerEvents" resultType="eventInfoDto">
+	SELECT <include refid="eventColumns" />
+	FROM event_info E
+	WHERE E.USE_YN = 'Y' AND E.DISPLAY_YN = 'Y' AND E.EVENT_START_DATE &lt;= NOW()
+	ORDER BY E.EVENT_START_DATE DESC, E.EVENT_NO DESC
+	</select>
+	<select id="selectAdminEvents" resultType="eventInfoDto">
+	SELECT <include refid="eventColumns" /> FROM event_info E ORDER BY E.EVENT_NO DESC
+	</select>
+	<select id="selectEvent" resultType="eventInfoDto">
+	SELECT <include refid="eventColumns" /> FROM event_info E WHERE E.EVENT_NO = #{eventNo}
+	</select>
+	<select id="selectEventGoodsNos" resultType="long">
+	SELECT GOODS_NO FROM event_goods WHERE EVENT_NO = #{eventNo} ORDER BY EVENT_GOODS_NO
+	</select>
+	<insert id="insertEvent" parameterType="eventInfoDto" useGeneratedKeys="true" keyProperty="eventNo">
+	INSERT INTO event_info (EVENT_TITLE, USE_YN, DISPLAY_YN, EVENT_START_DATE, EVENT_END_DATE,
+		REG_DATE, REG_ID, UPDT_DATE, UPDT_ID)
+	VALUES (#{eventTitle}, #{useYn}, #{displayYn}, #{eventStartDate}, #{eventEndDate},
+		NOW(), #{regId}, NOW(), #{updtId})
+	</insert>
+	<update id="updateEvent" parameterType="eventInfoDto">
+	UPDATE event_info SET EVENT_TITLE = #{eventTitle}, USE_YN = #{useYn}, DISPLAY_YN = #{displayYn},
+		EVENT_START_DATE = #{eventStartDate}, EVENT_END_DATE = #{eventEndDate},
+		UPDT_DATE = NOW(), UPDT_ID = #{updtId}
+	WHERE EVENT_NO = #{eventNo}
+	</update>
+	<delete id="deleteEventGoods">DELETE FROM event_goods WHERE EVENT_NO = #{eventNo}</delete>
+	<insert id="insertEventGoods">
+	INSERT INTO event_goods (EVENT_NO, GOODS_NO, REG_DATE, REG_ID, UPDT_DATE, UPDT_ID)
+	VALUES (#{eventNo}, #{goodsNo}, NOW(), #{regId}, NOW(), #{regId})
+	</insert>
+	<delete id="deleteEventImages">DELETE FROM event_image WHERE EVENT_NO = #{eventNo}</delete>
+	<insert id="insertEventImage">
+	INSERT INTO event_image (EVENT_NO, MAIN_IMAGE_YN, IMAGE_URL, REG_DATE, REG_ID, UPDT_DATE, UPDT_ID)
+	VALUES (#{eventNo}, 'Y', #{imageUrl}, NOW(), #{regId}, NOW(), #{regId})
+	</insert>
+</mapper>
