@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.polar.bear.api.mappers.AdminMenuMapper">
+	<select id="selectActiveMenus" resultType="adminMenuDto">
+	SELECT MENU_NO AS menuNo, MENU_NAME AS menuName, ROUTE_NAME AS routeName, DISPLAY_ORDER AS displayOrder
+	FROM admin_menu_info
+	WHERE USE_YN = 'Y'
+	ORDER BY DISPLAY_ORDER ASC, MENU_NO ASC
+	</select>
+</mapper>
