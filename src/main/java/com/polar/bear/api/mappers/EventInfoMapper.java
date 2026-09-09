@@ -9,7 +9,9 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface EventInfoMapper {
 	List<EventInfoDto> selectCustomerEvents() throws Exception;
-	List<EventInfoDto> selectAdminEvents() throws Exception;
+	List<EventInfoDto> selectAdminEvents(@Param("eventNo") Long eventNo, @Param("eventStartDate") String eventStartDate,
+			@Param("eventEndDate") String eventEndDate, @Param("statuses") List<String> statuses,
+			@Param("useYns") List<String> useYns, @Param("displayYns") List<String> displayYns) throws Exception;
 	EventInfoDto selectEvent(@Param("eventNo") Long eventNo) throws Exception;
 	List<Long> selectEventGoodsNos(@Param("eventNo") Long eventNo) throws Exception;
 	int insertEvent(EventInfoDto event) throws Exception;

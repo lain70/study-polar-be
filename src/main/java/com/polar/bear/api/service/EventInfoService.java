@@ -19,8 +19,9 @@ public class EventInfoService {
 		return eventInfoMapper.selectCustomerEvents();
 	}
 
-	public List<EventInfoDto> selectAdminEvents() throws Exception {
-		return eventInfoMapper.selectAdminEvents();
+	public List<EventInfoDto> selectAdminEvents(Long eventNo, String eventStartDate, String eventEndDate,
+			List<String> statuses, List<String> useYns, List<String> displayYns) throws Exception {
+		return eventInfoMapper.selectAdminEvents(eventNo, eventStartDate, eventEndDate, statuses, useYns, displayYns);
 	}
 
 	public EventInfoDto selectEvent(Long eventNo) throws Exception {

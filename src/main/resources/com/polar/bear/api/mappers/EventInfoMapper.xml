@@ -14,7 +14,16 @@
 	ORDER BY E.EVENT_START_DATE DESC, E.EVENT_NO DESC
 	</select>
 	<select id="selectAdminEvents" resultType="eventInfoDto">
-	SELECT <include refid="eventColumns" /> FROM event_info E ORDER BY E.EVENT_NO DESC
+	SELECT <include refid="eventColumns" /> FROM event_info E
+	<where>
+		<if test="eventNo != null">E.EVENT_NO = #{eventNo}</if>
+		<if test="eventStartDate != null and eventStartDate != ''">AND DATE(E.EVENT_START_DATE) &gt;= #{eventStartDate}</if>
+		<if test="eventEndDate != null and eventEndDate != ''">AND DATE(E.EVENT_END_DATE) &lt;= #{eventEndDate}</if>
+		<if test="statuses != null and statuses.size() > 0">AND (CASE WHEN NOW() &gt; E.EVENT_END_DATE THEN 'ENDED' ELSE 'ONGOING' END) IN <foreach collection="statuses" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+		<if test="useYns != null and useYns.size() > 0">AND E.USE_YN IN <foreach collection="useYns" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+		<if test="displayYns != null and displayYns.size() > 0">AND E.DISPLAY_YN IN <foreach collection="displayYns" item="item" open="(" separator="," close=")">#{item}</foreach></if>
+	</where>
+	ORDER BY E.EVENT_NO DESC
 	</select>
 	<select id="selectEvent" resultType="eventInfoDto">
 	SELECT <include refid="eventColumns" /> FROM event_info E WHERE E.EVENT_NO = #{eventNo}

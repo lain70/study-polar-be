@@ -1,6 +1,9 @@
 package com.polar.bear.api.controllers;
 
 import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import com.polar.bear.api.jwt.JwtUtil;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
@@ -37,11 +41,15 @@ public class AdminEventController {
 
 	@GetMapping(produces = "application/json")
 	public ResponseEntity<?> getEvents(@RequestHeader("Authorization") String token,
-			@RequestHeader("x-auth-user-service-key") String serviceKey) {
+			@RequestHeader("x-auth-user-service-key") String serviceKey,
+			@RequestParam(required = false) Long eventNo, @RequestParam(required = false) String eventStartDate,
+			@RequestParam(required = false) String eventEndDate, @RequestParam(required = false) String statuses,
+			@RequestParam(required = false) String useYns, @RequestParam(required = false) String displayYns) {
 		HttpHeaders headers = jsonHeaders();
 		try {
 			validateAdmin(token, serviceKey);
-			return new ResponseEntity<>(eventInfoService.selectAdminEvents(), headers, HttpStatus.OK);
+			return new ResponseEntity<>(eventInfoService.selectAdminEvents(eventNo, eventStartDate, eventEndDate,
+					csv(statuses), csv(useYns), csv(displayYns)), headers, HttpStatus.OK);
 		} catch (IllegalArgumentException e) {
 			return ResponseUtil.getResponseEntity(e.getMessage(), headers, HttpStatus.BAD_REQUEST);
 		} catch (Exception e) {
@@ -49,6 +57,10 @@ public class AdminEventController {
 			return ResponseUtil.getResponseEntity("이벤트 목록을 불러오지 못했습니다.", headers,
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	private List<String> csv(String value) {
+		return StringUtils.isBlank(value) ? Collections.emptyList() : Arrays.asList(value.split(","));
 	}
 
 	@GetMapping(value = "/{eventNo}", produces = "application/json")
