@@ -1,7 +1,10 @@
 HELP.md
 .gradle
 build/
-uploads/
+uploads/*
+!uploads/goods/
+uploads/goods/*
+!uploads/goods/polar-bear-default.jpg
 src/main/resources/application-loc.yml
 src/main/resources/application-prd.yml
 untitled/
