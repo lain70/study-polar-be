@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 
 import com.polar.bear.api.models.GoodsImageDto;
 import com.polar.bear.api.models.GoodsInfoDto;
+import com.polar.bear.api.models.GoodsInfoHistoryDto;
+import com.polar.bear.api.models.GoodsPriceHistoryDto;
 import com.polar.bear.api.models.CustomerGoodsDetailDto;
 import com.polar.bear.api.models.CustomerGoodsDto;
 import com.polar.bear.api.models.CustomerGoodsImageDto;
@@ -31,6 +33,17 @@ public interface GoodsInfoMapper {
 	List<CustomerGoodsDto> selectFeaturedGoods(@Param("limit") int limit) throws Exception;
 	CustomerGoodsDetailDto selectCustomerGoodsDetail(@Param("goodsNo") Long goodsNo) throws Exception;
 	List<CustomerGoodsImageDto> selectCustomerGoodsImages(@Param("goodsNo") Long goodsNo) throws Exception;
+	GoodsInfoDto selectGoodsInfoForUpdate(@Param("goodsNo") Long goodsNo) throws Exception;
+	Long selectLatestGoodsInfoHistoryNoForUpdate(@Param("goodsNo") Long goodsNo) throws Exception;
+	int insertGoodsInfoHistory(GoodsInfoHistoryDto history) throws Exception;
+	int insertGoodsPriceHistory(GoodsPriceHistoryDto history) throws Exception;
+	List<GoodsInfoHistoryDto> selectGoodsInfoHistory(@Param("goodsNo") Long goodsNo,
+			@Param("offset") int offset, @Param("limit") int limit) throws Exception;
+	List<GoodsPriceHistoryDto> selectGoodsPriceHistory(@Param("goodsNo") Long goodsNo,
+			@Param("offset") int offset, @Param("limit") int limit) throws Exception;
+	int countGoodsInfoHistory(@Param("goodsNo") Long goodsNo) throws Exception;
+	int countGoodsPriceHistory(@Param("goodsNo") Long goodsNo) throws Exception;
+	int updateGoodsInfo(GoodsInfoDto goodsInfoDto) throws Exception;
 	int insertGoodsInfo(GoodsInfoDto goodsInfoDto) throws Exception;
 	int insertGoodsImage(GoodsImageDto goodsImageDto) throws Exception;
 }

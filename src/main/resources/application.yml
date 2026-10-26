@@ -21,3 +21,37 @@ mybatis:
 
 goods:
   image-storage-path: ${GOODS_IMAGE_STORAGE_PATH:./uploads/goods}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: "loc & !prd"
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 1
+        prefetch: 1
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000ms
+          multiplier: 2
+---
+spring:
+  config:
+    activate:
+      on-profile: "!loc | prd"
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration

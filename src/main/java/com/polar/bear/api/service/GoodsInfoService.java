@@ -21,6 +21,7 @@ import com.polar.bear.api.utils.GoodsImagePathResolver;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +33,7 @@ public class GoodsInfoService {
 	private static final String IMAGE_URL_PREFIX = "/goods-images/";
 	private static final long MAX_IMAGE_SIZE = 10L * 1024L * 1024L;
 	private final GoodsInfoMapper goodsInfoMapper;
+	private final GoodsHistoryService goodsHistoryService;
 
 	@Value("${goods.image-storage-path:./uploads/goods}")
 	private String imageStoragePath;
@@ -41,10 +43,11 @@ public class GoodsInfoService {
 			int page, int size) throws Exception {
 		int safePage = Math.max(page, 1);
 		int safeSize = Math.min(Math.max(size, 1), 100);
+		int offset = calculateOffset(safePage, safeSize);
 		Map<String, Object> result = new HashMap<>();
 		String trimmedKeyword = StringUtils.trimToNull(keyword);
 		result.put("items", goodsInfoMapper.selectGoodsList(searchType, trimmedKeyword, registeredFrom,
-				registeredTo, statuses, brandNos, categoryNos, (safePage - 1) * safeSize, safeSize));
+				registeredTo, statuses, brandNos, categoryNos, offset, safeSize));
 		result.put("totalCount", goodsInfoMapper.countGoodsList(searchType, trimmedKeyword, registeredFrom,
 				registeredTo, statuses, brandNos, categoryNos));
 		result.put("brands", goodsInfoMapper.selectGoodsBrands());
@@ -74,6 +77,40 @@ public class GoodsInfoService {
 		return goods;
 	}
 
+	public Map<String, Object> selectGoodsHistory(Long goodsNo, int page, int size) throws Exception {
+		int safePage = Math.max(page, 1);
+		int safeSize = Math.min(Math.max(size, 1), 100);
+		int offset = calculateOffset(safePage, safeSize);
+		Map<String, Object> result = new HashMap<>();
+		result.put("goodsInfoHistory", goodsInfoMapper.selectGoodsInfoHistory(goodsNo, offset, safeSize));
+		result.put("goodsPriceHistory", goodsInfoMapper.selectGoodsPriceHistory(goodsNo, offset, safeSize));
+		result.put("goodsInfoHistoryTotalCount", goodsInfoMapper.countGoodsInfoHistory(goodsNo));
+		result.put("goodsPriceHistoryTotalCount", goodsInfoMapper.countGoodsPriceHistory(goodsNo));
+		result.put("page", safePage);
+		result.put("size", safeSize);
+		return result;
+	}
+
+	@Transactional(rollbackFor = Exception.class)
+	public Long updateGoodsInfo(GoodsInfoDto goods) throws Exception {
+		if (goods.getGoodsInfoHistoryNo() == null || goods.getGoodsInfoHistoryNo() <= 0) {
+			throw new IllegalArgumentException("조회한 상품 정보 이력 번호를 입력해 주세요.");
+		}
+		GoodsInfoDto before = goodsInfoMapper.selectGoodsInfoForUpdate(goods.getGoodsNo());
+		if (before == null) {
+			throw new IllegalArgumentException("상품을 찾을 수 없습니다.");
+		}
+		Long latest = goodsInfoMapper.selectLatestGoodsInfoHistoryNoForUpdate(goods.getGoodsNo());
+		if (!goods.getGoodsInfoHistoryNo().equals(latest)) {
+			throw new OptimisticLockingFailureException("상품이 변경되었습니다. 다시 조회한 후 수정해 주세요.");
+		}
+		if (goodsInfoMapper.updateGoodsInfo(goods) != 1) {
+			throw new IllegalStateException("상품을 저장하지 못했습니다.");
+		}
+		GoodsInfoDto after = goodsInfoMapper.selectGoodsInfoForUpdate(goods.getGoodsNo());
+		return goodsHistoryService.record(before, after, "UPDATE");
+	}
+
 	@Transactional(rollbackFor = Exception.class)
 	public Long insertGoodsInfo(GoodsInfoDto goods, List<MultipartFile> images) throws Exception {
 		List<Path> savedFiles = new ArrayList<>();
@@ -101,6 +138,7 @@ public class GoodsInfoService {
 					goodsInfoMapper.insertGoodsImage(imageDto);
 				}
 			}
+			goodsHistoryService.record(null, goodsInfoMapper.selectGoodsInfoForUpdate(goods.getGoodsNo()), "CREATE");
 			return goods.getGoodsNo();
 		} catch (Exception e) {
 			for (Path savedFile : savedFiles) {
@@ -108,6 +146,14 @@ public class GoodsInfoService {
 			}
 			throw e;
 		}
+	}
+
+	private int calculateOffset(int page, int size) {
+		long offset = ((long) page - 1) * size;
+		if (offset > Integer.MAX_VALUE) {
+			throw new IllegalArgumentException("페이지 번호가 허용 범위를 초과했습니다.");
+		}
+		return (int) offset;
 	}
 
 	private void validateImage(MultipartFile image) {
