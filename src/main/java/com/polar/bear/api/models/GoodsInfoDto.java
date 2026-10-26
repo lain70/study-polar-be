@@ -18,6 +18,7 @@ import lombok.Setter;
 public class GoodsInfoDto implements Serializable {
 	private static final long serialVersionUID = -2024550559477689007L;
 	private Long goodsNo;
+	private Long goodsInfoHistoryNo;
 	private String goodsCode;
 	private String goodsNameKo;
 	private String goodsNameEn;

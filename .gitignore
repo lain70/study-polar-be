@@ -42,3 +42,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Local RabbitMQ credentials
+.local/

@@ -2,7 +2,9 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.polar.bear.api.mappers.GoodsInfoMapper">
 	<sql id="goodsColumns">
-		P.GOODS_NO, P.GOODS_CODE, P.GOODS_NAME_KO, P.GOODS_NAME_EN, P.BRAND_NO,
+		P.GOODS_NO,
+		(SELECT MAX(H.GOODS_INFO_HISTORY_NO) FROM goods_info_history H WHERE H.GOODS_NO = P.GOODS_NO) GOODS_INFO_HISTORY_NO,
+		P.GOODS_CODE, P.GOODS_NAME_KO, P.GOODS_NAME_EN, P.BRAND_NO,
 		B.BRAND_NAME_KO, B.BRAND_NAME_EN, P.CATEGORY_NO, C.CATEGORY_NAME,
 		P.SELLER_NAME, P.MANUFACTURER, P.ORIGIN_COUNTRY, P.COST_PRICE,
 		P.SALE_PRICE, P.DISCOUNT_PRICE, P.STOCK_QUANTITY, P.SAFETY_STOCK_QUANTITY, P.TAX_TYPE,
@@ -100,6 +102,72 @@
 	SELECT GOODS_IMAGE_NO, IMAGE_URL, REPRESENTATIVE_YN, SORT_ORDER
 	FROM goods_image WHERE GOODS_NO = #{goodsNo} ORDER BY REPRESENTATIVE_YN DESC, SORT_ORDER
 	</select>
+	<select id="selectGoodsInfoForUpdate" resultType="goodsInfoDto">
+	SELECT * FROM goods_info WHERE GOODS_NO = #{goodsNo} FOR UPDATE
+	</select>
+	<select id="selectLatestGoodsInfoHistoryNoForUpdate" resultType="long">
+	SELECT GOODS_INFO_HISTORY_NO FROM goods_info_history
+	WHERE GOODS_NO = #{goodsNo} ORDER BY GOODS_INFO_HISTORY_NO DESC LIMIT 1 FOR UPDATE
+	</select>
+	<insert id="insertGoodsInfoHistory" parameterType="com.polar.bear.api.models.GoodsInfoHistoryDto"
+		useGeneratedKeys="true" keyProperty="goodsInfoHistoryNo">
+	INSERT INTO goods_info_history (GOODS_NO, CHANGE_TYPE, BEFORE_VALUES, AFTER_VALUES, CHANGED_FIELDS, REG_DATE, REG_ID)
+	VALUES (#{goodsNo}, #{changeType}, #{beforeValues}, #{afterValues}, #{changedFields}, NOW(6), #{regId})
+	</insert>
+	<insert id="insertGoodsPriceHistory" parameterType="com.polar.bear.api.models.GoodsPriceHistoryDto">
+	INSERT INTO goods_price_history (GOODS_INFO_HISTORY_NO, GOODS_NO, CHANGE_TYPE,
+		BEFORE_COST_PRICE, AFTER_COST_PRICE, BEFORE_SALE_PRICE, AFTER_SALE_PRICE,
+		BEFORE_DISCOUNT_PRICE, AFTER_DISCOUNT_PRICE, REG_DATE, REG_ID)
+	VALUES (#{goodsInfoHistoryNo}, #{goodsNo}, #{changeType}, #{beforeCostPrice}, #{afterCostPrice},
+		#{beforeSalePrice}, #{afterSalePrice}, #{beforeDiscountPrice}, #{afterDiscountPrice}, NOW(6), #{regId})
+	</insert>
+	<select id="selectGoodsInfoHistory" resultType="com.polar.bear.api.models.GoodsInfoHistoryDto">
+	SELECT GOODS_INFO_HISTORY_NO, GOODS_NO, CHANGE_TYPE, BEFORE_VALUES, AFTER_VALUES, CHANGED_FIELDS, REG_DATE, REG_ID
+	FROM goods_info_history WHERE GOODS_NO = #{goodsNo}
+	ORDER BY GOODS_INFO_HISTORY_NO DESC LIMIT #{limit} OFFSET #{offset}
+	</select>
+	<select id="selectGoodsPriceHistory" resultType="com.polar.bear.api.models.GoodsPriceHistoryDto">
+	SELECT GOODS_PRICE_HISTORY_NO, GOODS_INFO_HISTORY_NO, GOODS_NO, CHANGE_TYPE,
+		BEFORE_COST_PRICE, AFTER_COST_PRICE, BEFORE_SALE_PRICE, AFTER_SALE_PRICE,
+		BEFORE_DISCOUNT_PRICE, AFTER_DISCOUNT_PRICE, REG_DATE, REG_ID
+	FROM goods_price_history WHERE GOODS_NO = #{goodsNo}
+	ORDER BY GOODS_PRICE_HISTORY_NO DESC LIMIT #{limit} OFFSET #{offset}
+	</select>
+	<select id="countGoodsInfoHistory" resultType="int">
+	SELECT COUNT(*) FROM goods_info_history WHERE GOODS_NO = #{goodsNo}
+	</select>
+	<select id="countGoodsPriceHistory" resultType="int">
+	SELECT COUNT(*) FROM goods_price_history WHERE GOODS_NO = #{goodsNo}
+	</select>
+	<update id="updateGoodsInfo" parameterType="goodsInfoDto">
+	UPDATE goods_info
+	SET GOODS_CODE = #{goodsCode},
+		GOODS_NAME_KO = #{goodsNameKo},
+		GOODS_NAME_EN = #{goodsNameEn},
+		BRAND_NO = #{brandNo},
+		CATEGORY_NO = #{categoryNo},
+		SELLER_NAME = #{sellerName},
+		MANUFACTURER = #{manufacturer},
+		ORIGIN_COUNTRY = #{originCountry},
+		COST_PRICE = #{costPrice},
+		SALE_PRICE = #{salePrice},
+		DISCOUNT_PRICE = #{discountPrice},
+		STOCK_QUANTITY = #{stockQuantity},
+		SAFETY_STOCK_QUANTITY = #{safetyStockQuantity},
+		TAX_TYPE = #{taxType},
+		SHIPPING_TYPE = #{shippingType},
+		SHIPPING_FEE = #{shippingFee},
+		GOODS_STATUS = #{goodsStatus},
+		USE_YN = #{useYn},
+		DISPLAY_YN = #{displayYn},
+		DISPLAY_START_DATE = #{displayStartDate},
+		DISPLAY_END_DATE = #{displayEndDate},
+		SHORT_DESCRIPTION = #{shortDescription},
+		DETAIL_DESCRIPTION = #{detailDescription},
+		SEARCH_KEYWORDS = #{searchKeywords},
+		UPDT_DATE = NOW(), UPDT_ID = #{updtId}
+	WHERE GOODS_NO = #{goodsNo}
+	</update>
 	<insert id="insertGoodsInfo" parameterType="goodsInfoDto" useGeneratedKeys="true" keyProperty="goodsNo">
 	INSERT INTO goods_info (GOODS_CODE, GOODS_NAME_KO, GOODS_NAME_EN, BRAND_NO, CATEGORY_NO,
 		SELLER_NAME, MANUFACTURER, ORIGIN_COUNTRY, COST_PRICE, SALE_PRICE, DISCOUNT_PRICE,

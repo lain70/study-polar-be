@@ -1,0 +1,4 @@
+-- 로컬 goods_info에만 명시적으로 적용한다. 자동 실행하지 않는다.
+-- 기존 version 컬럼이 없는지 먼저 확인한다. 운영 적용은 별도 승인 대상이다.
+-- 폐기된 마이그레이션: migrate_goods_history.sql을 사용한다.
+-- ALTER TABLE goods_info ADD COLUMN VERSION BIGINT NOT NULL DEFAULT 0;
