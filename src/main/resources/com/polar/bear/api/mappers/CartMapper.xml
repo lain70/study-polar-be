@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.polar.bear.api.mappers.CartMapper">
+	<sql id="availableGoods">
+		P.USE_YN = 'Y' AND P.DISPLAY_YN = 'Y' AND P.GOODS_STATUS = 'ON_SALE'
+		AND P.STOCK_QUANTITY &gt; 0
+		AND (P.DISPLAY_START_DATE IS NULL OR P.DISPLAY_START_DATE &lt;= NOW())
+		AND (P.DISPLAY_END_DATE IS NULL OR P.DISPLAY_END_DATE &gt;= NOW())
+	</sql>
+	<select id="selectItems" resultType="com.polar.bear.api.models.CartItemDto">
+	SELECT I.GOODS_NO, I.QUANTITY,
+		CASE WHEN <include refid="availableGoods" /> THEN P.GOODS_NAME_KO ELSE '현재 구매할 수 없는 상품' END GOODS_NAME_KO,
+		CASE WHEN <include refid="availableGoods" /> THEN
+			(SELECT IMAGE_URL FROM goods_image WHERE GOODS_NO = P.GOODS_NO ORDER BY REPRESENTATIVE_YN DESC, SORT_ORDER LIMIT 1)
+		END REPRESENTATIVE_IMAGE_URL,
+		CASE WHEN <include refid="availableGoods" /> THEN COALESCE(P.DISCOUNT_PRICE, P.SALE_PRICE) END UNIT_PRICE,
+		CASE WHEN <include refid="availableGoods" /> THEN P.STOCK_QUANTITY ELSE 0 END STOCK_QUANTITY,
+		CASE WHEN <include refid="availableGoods" /> THEN TRUE ELSE FALSE END AVAILABLE
+	FROM cart_item I INNER JOIN goods_info P ON P.GOODS_NO = I.GOODS_NO
+	WHERE I.USER_NO = #{userNo}
+	ORDER BY I.REG_DATE DESC, I.GOODS_NO DESC
+	</select>
+	<select id="selectAvailableGoodsForUpdate" resultType="goodsInfoDto">
+	SELECT P.GOODS_NO, P.STOCK_QUANTITY FROM goods_info P
+	WHERE P.GOODS_NO = #{goodsNo} AND <include refid="availableGoods" /> FOR UPDATE
+	</select>
+	<select id="selectQuantity" resultType="int">
+	SELECT QUANTITY FROM cart_item WHERE USER_NO = #{userNo} AND GOODS_NO = #{goodsNo} FOR UPDATE
+	</select>
+	<insert id="insertItem">
+	INSERT INTO cart_item (USER_NO, GOODS_NO, QUANTITY) VALUES (#{userNo}, #{goodsNo}, #{quantity})
+	</insert>
+	<update id="updateQuantity">
+	UPDATE cart_item SET QUANTITY = #{quantity}, UPDT_DATE = NOW()
+	WHERE USER_NO = #{userNo} AND GOODS_NO = #{goodsNo}
+	</update>
+	<delete id="deleteItem">
+	DELETE FROM cart_item WHERE USER_NO = #{userNo} AND GOODS_NO = #{goodsNo}
+	</delete>
+</mapper>

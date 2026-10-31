@@ -77,6 +77,31 @@ public class UserInfoController {
 		}
 	}
 
+	@RequestMapping(value = "/info", method = RequestMethod.GET, produces = "application/json")
+	public ResponseEntity<?> getUserInfo(
+			@RequestHeader(value = "Authorization") String token,
+			@RequestHeader(value = "x-auth-user-service-key") String serviceKey) {
+		HttpHeaders headers = createJsonHeaders();
+		headers.set(HttpHeaders.CACHE_CONTROL, "no-store");
+		try {
+			if (!isValidServiceKey(serviceKey)) {
+				return ResponseUtil.getResponseEntity("서비스키가 올바르지 않습니다.", headers, HttpStatus.BAD_REQUEST);
+			}
+			UserInfoDto user = getAuthenticatedUser(token);
+			if (user == null) {
+				return ResponseUtil.getResponseEntity("회원 정보를 찾을 수 없습니다.", headers, HttpStatus.UNAUTHORIZED);
+			}
+			Map<String, String> profile = new HashMap<>();
+			profile.put("userId", user.getUserId());
+			profile.put("userName", user.getUserName());
+			profile.put("userPhone", user.getUserPhone());
+			return new ResponseEntity<Map<String, String>>(profile, headers, HttpStatus.OK);
+		} catch (Exception e) {
+			log.error("API(/api/user/info) [GET]", e);
+			return ResponseUtil.getResponseEntity("회원 정보를 불러오지 못했습니다.", headers, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
 	@RequestMapping(value = "/password-confirm", method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
 	public ResponseEntity<?> confirmPassword(
 			@RequestHeader(value = "Authorization") String token,
